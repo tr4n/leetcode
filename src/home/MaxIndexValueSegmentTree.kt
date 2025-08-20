@@ -1,3 +1,5 @@
+package home
+
 class MaxIndexValueSegmentTree(private val data: LongArray) {
     class Node(val value: Long, val index: Int)
 

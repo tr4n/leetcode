@@ -1,3 +1,5 @@
+package home
+
 class RightSmallerSegmentTree(private val data: IntArray) {
     private val n = data.size
     private val tree = Array(4 * n) { emptyList<Int>() }

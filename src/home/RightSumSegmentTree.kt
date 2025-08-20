@@ -1,3 +1,5 @@
+package home
+
 class RightSumSegmentTree(private val data: LongArray) {
     private val n = data.size
     private val tree = Array(4 * n) { emptyList<Long>() }

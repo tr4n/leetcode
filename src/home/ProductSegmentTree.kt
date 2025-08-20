@@ -1,3 +1,5 @@
+package home
+
 class ProductSegmentTree(private val data: IntArray) {
     private val n = data.size
     private val tree = DoubleArray(4 * n)

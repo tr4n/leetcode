@@ -1,4 +1,7 @@
+package home
+
 import java.util.*
+import kotlin.collections.iterator
 
 class MaxLongSparseTable(private val arr: List<Long>) {
     private val n = arr.size

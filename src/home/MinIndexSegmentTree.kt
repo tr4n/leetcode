@@ -1,3 +1,5 @@
+package home
+
 class MinIndexSegmentTree(arr: IntArray) {
     private var data = arr
     private val n = data.size

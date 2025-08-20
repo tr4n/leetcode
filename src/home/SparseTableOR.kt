@@ -1,3 +1,5 @@
+package home
+
 class SparseTableOR(private val arr: IntArray) {
     private val n = arr.size
     private val log = IntArray(n + 1)

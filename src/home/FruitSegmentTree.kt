@@ -1,3 +1,5 @@
+package home
+
 class FruitSegmentTree {
     private val size = 1_000_000_000
     private val root = Node()

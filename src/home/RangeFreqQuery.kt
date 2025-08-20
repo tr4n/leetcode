@@ -1,3 +1,5 @@
+package home
+
 class RangeFreqQuery(arr: IntArray) {
     private val data = arr
     private val n = data.size

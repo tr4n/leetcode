@@ -1,4 +1,5 @@
-class MinSegmentTree(private val data: IntArray) {
+package home
+class MaxSegmentTree(private val data: IntArray) {
     private val n = data.size
     private val tree = IntArray(4 * n)
 
@@ -13,23 +14,23 @@ class MinSegmentTree(private val data: IntArray) {
             val mid = (l + r) / 2
             build(node * 2, l, mid)
             build(node * 2 + 1, mid + 1, r)
-            tree[node] = minOf(tree[node * 2], tree[node * 2 + 1])
+            tree[node] = maxOf(tree[node * 2], tree[node * 2 + 1])
         }
     }
 
-    fun query(i: Int, j: Int): Int {
+    fun getMax(i: Int, j: Int): Int {
         return query(1, 0, n - 1, i, j)
     }
 
     private fun query(node: Int, l: Int, r: Int, i: Int, j: Int): Int {
-        if (r < i || l > j) return Int.MAX_VALUE
+        if (r < i || l > j) return Int.MIN_VALUE
 
         if (i <= l && r <= j) return tree[node]
 
         val mid = (l + r) / 2
         val left = query(node * 2, l, mid, i, j)
         val right = query(node * 2 + 1, mid + 1, r, i, j)
-        return minOf(left, right)
+        return maxOf(left, right)
     }
 
     fun update(idx: Int, value: Int) {
@@ -46,7 +47,7 @@ class MinSegmentTree(private val data: IntArray) {
             } else {
                 update(node * 2 + 1, mid + 1, r, idx, value)
             }
-            tree[node] = minOf(tree[node * 2], tree[node * 2 + 1])
+            tree[node] = maxOf(tree[node * 2], tree[node * 2 + 1])
         }
     }
 }

@@ -1,3 +1,5 @@
+package home
+
 class NumSubarrayBoundedMax(private val arr: IntArray) {
     private val n = arr.size
     private val log = IntArray(n + 1)

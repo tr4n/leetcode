@@ -1,5 +1,8 @@
+package home
+
 import java.lang.Integer.min
 import kotlin.math.max
+import kotlin.text.iterator
 
 fun String.to2DIntArray(): Array<IntArray> {
     return this

@@ -1,3 +1,5 @@
+package home
+
 import kotlin.math.abs
 
 class KthPairDistance(private val data: IntArray) {

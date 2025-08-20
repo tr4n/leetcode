@@ -1,3 +1,5 @@
+package home
+
 import java.util.*
 
 class FurthestBuildingSegmentTree(private val data: List<Int>, private val limit: Int) {

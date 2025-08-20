@@ -3041,7 +3041,7 @@ fun main() {
     )
     val k = 6
     println(
-        //   findKthNumber(9895, 28405, 100787757)
+        //   home.findKthNumber(9895, 28405, 100787757)
         maxBalancedSubsequenceSum(intArrayOf(3,3,5,6))
     )
 }

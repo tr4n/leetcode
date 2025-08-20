@@ -1,6 +1,9 @@
+package home
+
 import java.util.PriorityQueue
 import java.util.TreeMap
 import kotlin.collections.ArrayDeque
+import kotlin.collections.iterator
 import kotlin.collections.sort
 import kotlin.math.*
 
@@ -990,7 +993,7 @@ fun new21Game(n: Int, k: Int, maxPts: Int): Double {
 }
 
 fun main() {
-    // val matrix = "[[1,5,9],[10,11,13],[12,13,15]]".to2DIntArray()
+    // val matrix = "[[1,5,9],[10,11,13],[12,13,15]]".home.to2DIntArray()
     val flights = "[[0,1,2],[1,2,1],[2,0,10]]".to2DIntArray()
     println(
         new21Game(21, 17, 10)

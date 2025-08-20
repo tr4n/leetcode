@@ -1,3 +1,5 @@
+package home
+
 class MaxSlidingWindow(private val data: IntArray) {
     private val n = data.size
     private val tree = IntArray(4 * n)

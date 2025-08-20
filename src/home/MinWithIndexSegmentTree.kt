@@ -1,3 +1,5 @@
+package home
+
 class LazyMinWithShiftedIndexSegmentTree(private val data: IntArray) {
     data class Node(
         var value: Int = Int.MAX_VALUE,
