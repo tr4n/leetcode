@@ -142,7 +142,7 @@ class LazyMinWithShiftedIndexSegmentTree(private val data: IntArray) {
 fun minInteger(num: String, k: Int): String {
     val arr = num.map { it.digitToInt() }
     val tree = LazyMinWithShiftedIndexSegmentTree(arr.toIntArray())
-    val sumTree = SumSegmentTree(IntArray(arr.size) {1})
+    val sumTree = SumIntSegmentTree(IntArray(arr.size) {1})
     val minNum = arr.sorted().joinToString("")
     println(arr)
     val n = arr.size

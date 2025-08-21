@@ -5,22 +5,13 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
-fun main() {
-    println(
-        maxTotalFruits(
-            arrayOf(intArrayOf(2,8), intArrayOf(6,3), intArrayOf(8,6)),
-            5,
-            4
-        )
-    )
-}
 
 fun countEven(num: Int): Int {
-    if(num < 2) return 0
+    if (num < 2) return 0
     var cnt = 0
     for (i in 2..num) {
         val digitSum = num.toString().sumOf { it.digitToInt() }
-        if(digitSum % 2 == 0) cnt ++
+        if (digitSum % 2 == 0) cnt++
     }
     return cnt
 }
@@ -787,4 +778,29 @@ fun largestRectangleArea(heights: IntArray): Int {
 
     return maxArea
 
+}
+
+fun countIncreasingSubsequencesK(nums: IntArray, k: Int): Long {
+    val n = nums.size
+    val maxVal = nums.max()
+
+    val tree = Array(k) {
+        SumLongSegmentTree(List(maxVal + 1) { 0L })
+    }
+
+    for (num in nums) {
+        tree[0].update(num, 1)
+
+        for (len in 1 until k) {
+            val count = tree[len - 1].sumRange(1, num - 1)
+            if(count > 0) tree[len].update(num, count)
+        }
+    }
+
+    for (i in 0 until k) {
+        println((0 until n).map {
+            tree[i].sumRange(nums[it], nums[it])
+        })
+    }
+    return tree[k - 1].sumRange(1, maxVal)
 }
