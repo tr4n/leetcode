@@ -307,7 +307,7 @@ fun lengthOfLIS(nums: IntArray, k: Int): Int {
         val left = (num - k).coerceAtLeast(0)
         val right = num - 1
         if (left > right) continue
-        val d = tree.getMax(left, right) + 1
+        val d = tree.query(left, right) + 1
         maxLength = maxOf(maxLength, d)
         tree.update(num, d)
     }

@@ -1,9 +1,7 @@
 package remote
 
 import java.util.*
-import kotlin.collections.iterator
 import kotlin.math.*
-import kotlin.text.iterator
 
 fun totalFruit(fruits: IntArray): Int {
     val queue = ArrayDeque<Int>()
@@ -3022,7 +3020,7 @@ fun maxBalancedSubsequenceSum(nums: IntArray): Long {
         maxValue = maxOf(maxValue, balance)
         balance
     }
-    val maxSegmentTree = _root_ide_package_.org.example.MaxDynamicSegmentTreeLong(minValue, maxValue)
+    val maxSegmentTree = MaxDynamicSegmentTreeLong(minValue, maxValue)
     var result = Long.MIN_VALUE
     for (i in 0 until n) {
         val balance = balances[i]
@@ -3033,17 +3031,240 @@ fun maxBalancedSubsequenceSum(nums: IntArray): Long {
     return result
 }
 
+fun maxEqualFreq(nums: IntArray): Int {
+    val n = nums.size
+    var minValue = Int.MAX_VALUE
+    var maxValue = Int.MIN_VALUE
+    for (num in nums) {
+        minValue = minOf(minValue, num)
+        maxValue = maxOf(maxValue, num)
+    }
+
+    var maxLength = 0
+    val minTree = MinSegmentTree(IntArray(maxValue + 1) { n + 1 })
+    val maxTree = MaxSegmentTree(IntArray(maxValue + 1))
+
+    val freqMap = mutableMapOf<Int, Int>()
+    val freqList = Array(n + 1) { mutableSetOf<Int>() }
+
+    for (i in 0 until n) {
+        val num = nums[i]
+        val fNum = (freqMap[num] ?: 0) + 1
+        freqMap[num] = fNum
+        freqList[fNum].add(num)
+
+        if (fNum > 1) {
+            freqList[fNum - 1].remove(num)
+        }
+
+        minTree.update(num, fNum)
+        maxTree.update(num, fNum)
+
+        val minFreq = minTree.query(minValue, maxValue)
+        val maxFreq = maxTree.query(minValue, maxValue)
+        // println("i = $i, $minFreq $maxFreq")
+        if (minFreq == 1 && maxFreq == 1) {
+            maxLength = i + 1
+            continue
+        }
+
+        if (minFreq == 1 && freqList[1].size == 1) {
+            val minFreqNum = freqList[1].first()
+            minTree.update(minFreqNum, n + 1)
+            maxTree.update(minFreqNum, 0)
+            val newMin = minTree.query(minValue, maxValue)
+            val newMax = maxTree.query(minValue, maxValue)
+            if (newMax == newMin) maxLength = i + 1
+            minTree.update(minFreqNum, 1)
+            maxTree.update(minFreqNum, 1)
+        }
+        if (maxFreq in 2..n && freqList[maxFreq].size == 1) {
+            val maxFreqNum = freqList[maxFreq].first()
+            minTree.update(maxFreqNum, maxFreq - 1)
+            maxTree.update(maxFreqNum, maxFreq - 1)
+            val newMin = minTree.query(minValue, maxValue)
+            val newMax = maxTree.query(minValue, maxValue)
+            if (newMax == newMin) maxLength = i + 1
+            minTree.update(maxFreqNum, maxFreq)
+            maxTree.update(maxFreqNum, maxFreq)
+        }
+    }
+    return maxLength
+}
+
+fun numSubarraysWithSum(nums: IntArray, goal: Int): Int {
+    val n = nums.size
+    val sums = IntArray(n + 1)
+    for (i in 0 until n) sums[i + 1] = sums[i] + nums[i]
+    var cnt = 0
+
+    for (i in 0 until n) {
+        var l = i
+        var r = n - 1
+        var endIndex = -1
+        while (l <= r) {
+            val mid = (l + r) / 2
+            val sum = sums[mid + 1] - sums[i]
+            if (sum <= goal) {
+                if (sum == goal) endIndex = mid
+                l = mid + 1
+            } else {
+                r = mid - 1
+            }
+        }
+
+        l = i
+        r = n - 1
+        var startIndex = -1
+        while (l <= r) {
+            val mid = (l + r) / 2
+            val sum = sums[mid + 1] - sums[i]
+            if (sum >= goal) {
+                if (sum == goal) startIndex = mid
+                r = mid - 1
+            } else {
+                l = mid + 1
+            }
+        }
+        if (endIndex >= i && startIndex >= i && endIndex >= startIndex) {
+            cnt += (endIndex - startIndex + 1)
+        }
+    }
+    return cnt
+}
+
+fun countSubarrays(nums: IntArray, k: Long): Long {
+    val n = nums.size
+    val sums = LongArray(n + 1)
+    for (i in 0 until n) sums[i + 1] = sums[i] + nums[i].toLong()
+    var cnt = 0L
+
+    fun score(start: Int, end: Int): Long {
+        val sum = sums[end + 1] - sums[start]
+        val length = (end - start + 1).toLong()
+        return sum * length
+    }
+
+    for (i in 0 until n) {
+        var l = i
+        var r = n - 1
+        var endIndex = -1
+        while (l <= r) {
+            val mid = (l + r) / 2
+            val score = score(i, mid)
+            if (score < k) {
+                endIndex = mid
+                l = mid + 1
+            } else {
+                r = mid - 1
+            }
+        }
+
+        if (endIndex >= i) {
+            cnt += (endIndex - i + 1).toLong()
+        }
+    }
+    return cnt
+}
+
+fun numberOfGoodSubarraySplits(nums: IntArray): Int {
+    val mod = 1_000_000_007L
+    val n = nums.size
+    var result = 1L
+    var lastIndex = -1
+    for ((i, num) in nums.withIndex()) {
+        if (num == 0) continue
+        if (lastIndex < 0) {
+            lastIndex = i
+            continue
+        }
+        result = (result * (i - lastIndex)) % mod
+        lastIndex = i
+    }
+    if (lastIndex == -1) return 0
+    return (result % mod).toInt()
+}
+
+fun numberOfSubarrays(nums: IntArray, k: Int): Int {
+    val n = nums.size
+    val sums = IntArray(n + 1)
+    for (i in 0 until n) {
+        sums[i + 1] = sums[i] + (if (nums[i] % 2 != 0) 1 else 0)
+    }
+    var cnt = 0
+
+    for (i in 0 until n) {
+        var l = i
+        var r = n - 1
+        var endIndex = -1
+        while (l <= r) {
+            val mid = (l + r) / 2
+            val sum = sums[mid + 1] - sums[i]
+            if (sum <= k) {
+                if (sum == k) endIndex = mid
+                l = mid + 1
+            } else {
+                r = mid - 1
+            }
+        }
+
+        l = i
+        r = n - 1
+        var startIndex = -1
+        while (l <= r) {
+            val mid = (l + r) / 2
+            val sum = sums[mid + 1] - sums[i]
+            if (sum >= k) {
+                if (sum == k) startIndex = mid
+                r = mid - 1
+            } else {
+                l = mid + 1
+            }
+        }
+        if (endIndex >= i && startIndex >= i && endIndex >= startIndex) {
+            cnt += (endIndex - startIndex + 1)
+        }
+    }
+    return cnt
+}
+
+fun countDistinct(nums: IntArray, k: Int, p: Int): Int {
+    val n = nums.size
+    val sums = IntArray(n + 1)
+    for (i in 0 until n) {
+        sums[i + 1] = sums[i] + (if (nums[i] % p == 0) 1 else 0)
+    }
+
+    val result = mutableSetOf<List<Int>>()
+    for (i in 0 until n) {
+        var l = i
+        var r = n - 1
+        var endIndex = -1
+        while (l <= r) {
+            val mid = (l + r) / 2
+            val sum = sums[mid + 1] - sums[i]
+            if (sum <= k) {
+                endIndex = mid
+                l = mid + 1
+            } else {
+                r = mid - 1
+            }
+        }
+        if (endIndex >= i) {
+            val list = mutableListOf<Int>()
+            for (j in i..endIndex) {
+                list.add(nums[j])
+                result.add(list.toList())
+            }
+        }
+    }
+  //  println(result.joinToString("\n") { it.toList().toString() })
+    return result.size
+}
+
 fun main() {
-    // 1 2 4 8 16
-    // 1 3 5 15
-    val matrix = arrayOf(
-        intArrayOf(1, 3, 5),
-        intArrayOf(6, 7, 12),
-        intArrayOf(11, 14, 14)
-    )
-    val k = 6
+
     println(
-        //   home.findKthNumber(9895, 28405, 100787757)
-        _root_ide_package_.kotlin.maxBalancedSubsequenceSum(intArrayOf(3, 3, 5, 6))
+        countDistinct(intArrayOf(1, 2, 3, 4), 4, 1)
     )
 }

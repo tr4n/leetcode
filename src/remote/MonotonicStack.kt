@@ -3,6 +3,47 @@ package remote
 import java.util.*
 import kotlin.math.max
 
+class MonotonicStack(private val arr: IntArray) {
+    private val n = arr.size
+
+    fun greaterRight(): IntArray = nextIndex(strict = true, greater = true, toRight = true)
+    fun greaterEqualRight(): IntArray = nextIndex(strict = false, greater = true, toRight = true)
+    fun smallerRight(): IntArray = nextIndex(strict = true, greater = false, toRight = true)
+    fun smallerEqualRight(): IntArray = nextIndex(strict = false, greater = false, toRight = true)
+
+    fun greaterLeft(): IntArray = nextIndex(strict = true, greater = true, toRight = false)
+    fun greaterEqualLeft(): IntArray = nextIndex(strict = false, greater = true, toRight = false)
+    fun smallerLeft(): IntArray = nextIndex(strict = true, greater = false, toRight = false)
+    fun smallerEqualLeft(): IntArray = nextIndex(strict = false, greater = false, toRight = false)
+
+    private fun nextIndex(strict: Boolean, greater: Boolean, toRight: Boolean): IntArray {
+        val res = if (toRight) {
+            IntArray(n) { n }
+        } else {
+            IntArray(n) { -1 }
+        }
+        val stack = ArrayDeque<Int>()
+
+        val range = if (toRight) 0 until n else (n - 1 downTo 0)
+        for (i in range) {
+            while (stack.isNotEmpty() && compare(arr[i], arr[stack.last()], greater, strict)) {
+                val idx = stack.removeLast()
+                res[idx] = i
+            }
+            stack.addLast(i)
+        }
+        return res
+    }
+
+    private fun compare(a: Int, b: Int, greater: Boolean, strict: Boolean): Boolean {
+        return if (greater) {
+            if (strict) a > b else a >= b
+        } else {
+            if (strict) a < b else a <= b
+        }
+    }
+}
+
 fun dailyTemperatures(temperatures: IntArray): IntArray {
     val n = temperatures.size
     val stack = Stack<Int>()
@@ -457,8 +498,8 @@ fun largestRectangleArea(heights: IntArray): Int {
 
     var maxArea = 0
 
-    for(i in 0 until n) {
-        if(heights[i] > 0) {
+    for (i in 0 until n) {
+        if (heights[i] > 0) {
             val area = heights[i] * (right[i] - left[i] - 1)
             maxArea = max(maxArea, area)
         }
@@ -512,4 +553,33 @@ fun maximumSumOfHeights(maxHeights: List<Int>): Long {
         stack.push(i)
     }
     return 0
+}
+
+fun validSubarraySize(nums: IntArray, threshold: Int): Int {
+    val n = nums.size
+
+    val monotonicStack = MonotonicStack(nums)
+    val smallerLeft = monotonicStack.smallerLeft()
+    val smallerRight = monotonicStack.smallerRight()
+
+    for (i in 0 until n) {
+        val num = nums[i].toLong()
+        val left = smallerLeft[i] + 1
+        val right = smallerRight[i] - 1
+
+        if (left !in 0 until n || right !in 0 until n) continue
+
+        val length = (right - left + 1)
+        println("$num $left-$right $length")
+        if (num * length.toLong() > threshold.toLong()) {
+            return length
+        }
+    }
+    return -1
+}
+
+fun main() {
+    println(
+        validSubarraySize(intArrayOf(6, 5, 6, 5, 8), 7)
+    )
 }

@@ -105,24 +105,16 @@ class MaxSegmentTree(private val arr: IntArray) {
         }
     }
 
-    private fun query(l: Int, r: Int, node: Int = 1, nl: Int = 0, nr: Int = n - 1): Int {
-        if (r < nl || nr < l) return Int.MIN_VALUE
-        if (l <= nl && nr <= r) return tree[node]
+    fun query(ql: Int, qr: Int, node: Int = 1, nl: Int = 0, nr: Int = n - 1): Int {
+        if (qr < nl || nr < ql) return Int.MIN_VALUE
+        if (ql <= nl && nr <= qr) return tree[node]
         val mid = (nl + nr) / 2
-        val left = query(l, r, node * 2, nl, mid)
-        val right = query(l, r, node * 2 + 1, mid + 1, nr)
+        val left = query(ql, qr, node * 2, nl, mid)
+        val right = query(ql, qr, node * 2 + 1, mid + 1, nr)
         return maxOf(left, right)
     }
 
-    fun getMax(start: Int, end: Int): Int {
-        return query(start, end)
-    }
-
-    fun update(idx: Int, value: Int) {
-        update(idx, value, 1, 0, n - 1)
-    }
-
-    private fun update(idx: Int, value: Int, node: Int = 1, l: Int = 0, r: Int = n - 1) {
+    fun update(idx: Int, value: Int, node: Int = 1, l: Int = 0, r: Int = n - 1) {
         if (l == r) {
             tree[node] = value
         } else {
@@ -227,3 +219,60 @@ class MaxDynamicSegmentTreeLong(private val L: Long, private val R: Long) {
     }
 }
 
+class SegmentTreeMinMaxFilter(private val arr: IntArray) {
+
+    private val n = arr.size
+    private val tree = Array(4 * n) { Pair(Int.MAX_VALUE, Int.MIN_VALUE) }
+
+    init {
+        build(1, 0, n - 1)
+    }
+
+    private fun build(node: Int, l: Int, r: Int) {
+        if (l == r) {
+            tree[node] = Pair(arr[l], arr[l])
+        } else {
+            val mid = (l + r) / 2
+            build(node * 2, l, mid)
+            build(node * 2 + 1, mid + 1, r)
+            tree[node] = merge(tree[node * 2], tree[node * 2 + 1])
+        }
+    }
+
+    private fun merge(a: Pair<Int, Int>, b: Pair<Int, Int>) =
+        Pair(minOf(a.first, b.first), maxOf(a.second, b.second))
+
+    fun query(ql: Int, qr: Int, node: Int = 1, nl: Int = 0, nr: Int = n - 1): Pair<Int, Int> {
+        if (qr < nl || nr < ql) return Pair(Int.MAX_VALUE, Int.MIN_VALUE)
+        if (ql <= nl && nr <= qr) return tree[node]
+        val mid = (nl + nr) / 2
+        val left = query(ql, qr, node * 2, nl, mid)
+        val right = query(ql, qr, node * 2 + 1, mid + 1, nr)
+        return merge(left, right)
+    }
+
+    fun queryFilter(ql: Int, qr: Int, filter: IntRange, node: Int = 1, nl: Int = 0, nr: Int = n - 1): Pair<Int, Int> {
+        if (qr < nl || nr < ql) return Pair(Int.MAX_VALUE, Int.MIN_VALUE)
+        if (nl == nr) {
+            val node = tree[node]
+            val minValue = if (node.first in filter) node.first else Int.MAX_VALUE
+            val maxValue = if (node.second in filter) node.second else Int.MIN_VALUE
+            return minValue to maxValue
+        }
+        val mid = (nl + nr) / 2
+        val left = queryFilter(ql, qr, filter, node * 2, nl, mid)
+        val right = queryFilter(ql, qr, filter, node * 2 + 1, mid + 1, nr)
+        return merge(left, right)
+    }
+
+    fun update(idx: Int, value: Int, node: Int = 1, l: Int = 0, r: Int = n - 1) {
+        if (l == r) {
+            tree[node] = Pair(value, value)
+        } else {
+            val mid = (l + r) / 2
+            if (idx <= mid) update(idx, value, node * 2, l, mid)
+            else update(idx, value, node * 2 + 1, mid + 1, r)
+            tree[node] = merge(tree[node * 2], tree[node * 2 + 1])
+        }
+    }
+}
