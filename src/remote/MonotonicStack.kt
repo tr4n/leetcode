@@ -578,6 +578,33 @@ fun validSubarraySize(nums: IntArray, threshold: Int): Int {
     return -1
 }
 
+fun maxSumMinProduct(nums: IntArray): Int {
+    val n = nums.size
+
+    val monotonicStack = MonotonicStack(nums)
+    val smallerLeft = monotonicStack.smallerLeft()
+    val smallerRight = monotonicStack.smallerRight()
+    val sums = LongArray(n + 1)
+    for (i in 0 until n) sums[i + 1] = sums[i] + nums[i].toLong()
+
+    var maxProduct = -1L
+
+    for (i in 0 until n) {
+        val num = nums[i].toLong()
+        val left = smallerLeft[i] + 1
+        val right = smallerRight[i] - 1
+
+        if (left !in 0 until n || right !in 0 until n) continue
+        val sum = sums[right + 1] - sums[left]
+        val product = num * sum
+
+        if (product > maxProduct) {
+            maxProduct = product
+        }
+    }
+    return (maxProduct % 1_000_000_007L).toInt()
+}
+
 fun main() {
     println(
         validSubarraySize(intArrayOf(6, 5, 6, 5, 8), 7)

@@ -151,6 +151,7 @@ fun countSquares(matrix: Array<IntArray>): Int {
     return cnt
 }
 
+
 fun main() {
     println(
         numSubmat(

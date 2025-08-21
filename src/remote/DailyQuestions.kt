@@ -3258,13 +3258,91 @@ fun countDistinct(nums: IntArray, k: Int, p: Int): Int {
             }
         }
     }
-  //  println(result.joinToString("\n") { it.toList().toString() })
+    //  println(result.joinToString("\n") { it.toList().toString() })
     return result.size
+}
+
+fun waysToMakeFair(nums: IntArray): Int {
+    val n = nums.size
+
+    val oddLeft = IntArray(n)
+    val oddRight = IntArray(n)
+
+    val evenLeft = IntArray(n)
+    val evenRight = IntArray(n)
+
+    for (i in 0 until n) {
+        if (i % 2 == 0) {
+            oddLeft[i] = nums[i] + if (i >= 2) oddLeft[i - 2] else 0
+        } else {
+            evenLeft[i] = nums[i] + if (i >= 2) evenLeft[i - 2] else 0
+        }
+    }
+
+    for (i in (n - 1) downTo 0) {
+        if (i % 2 == 0) {
+            oddRight[i] = nums[i] + if (i < n - 2) oddRight[i + 2] else 0
+        } else {
+            evenRight[i] = nums[i] + if (i < n - 2) evenRight[i + 2] else 0
+        }
+    }
+
+    var cnt = 0
+    for (i in 0 until n) {
+        if (i % 2 == 0) {
+            val eLeft = if (i >= 1) evenLeft[i - 1] else 0
+            val oRight = if (i < n - 2) oddRight[i + 2] else 0
+
+            val eRight = if (i < n - 1) evenRight[i + 1] else 0
+            val oLeft = if (i >= 2) oddLeft[i - 2] else 0
+
+            if (eLeft + oRight == eRight + oLeft) {
+                cnt++
+            }
+        } else {
+            val eLeft = if (i >= 2) evenLeft[i - 2] else 0
+            val oRight = if (i < n - 1) oddRight[i + 1] else 0
+            val eRight = if (i < n - 2) evenRight[i + 2] else 0
+            val oLeft = if (i >= 1) oddLeft[i - 1] else 0
+            if (eLeft + oRight == eRight + oLeft) {
+                cnt++
+            }
+        }
+    }
+    return cnt
+}
+
+fun minOperations(boxes: String): IntArray {
+    val n = boxes.length
+    var totalIndexes = 0
+    var totalBoxes = 0
+    for (i in 0 until n) {
+        if (boxes[i] == '1') {
+            totalIndexes += i
+            totalBoxes++
+        }
+    }
+    var leftIndexes = 0
+    var leftBoxes = 0
+    val answers = IntArray(n)
+    for (i in 0 until n) {
+        val box = boxes[i].digitToInt()
+        val index = if(box == 1) i else 0
+        val rightIndexes = totalIndexes - leftIndexes - index
+        val rightBoxes = totalBoxes - leftBoxes - box
+
+        val left = leftBoxes * i - leftIndexes
+        val right = rightIndexes - rightBoxes * i
+        answers[i] = left + right
+        leftIndexes += index
+        leftBoxes += box
+    }
+    return answers
 }
 
 fun main() {
 
     println(
-        countDistinct(intArrayOf(1, 2, 3, 4), 4, 1)
+        minOperations("1").toList()
     )
 }
