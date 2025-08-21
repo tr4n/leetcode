@@ -62,7 +62,7 @@ fun numberOfSubmatrices(grid: Array<CharArray>): Int {
         for (j in 0 until n) {
             val x = xCounter.query(0, 0, i, j)
             val y = yCounter.query(0, 0, i, j)
-            if(x > 0 && x == y) cnt ++
+            if (x > 0 && x == y) cnt++
         }
     }
     return cnt
@@ -151,6 +151,33 @@ fun countSquares(matrix: Array<IntArray>): Int {
     return cnt
 }
 
+fun maxSumSubmatrix(matrix: Array<IntArray>, k: Int): Int {
+    val m = matrix.size
+    val n = matrix[0].size
+
+    val prefixY = Array(m + 1) { IntArray(n + 1) }
+    for (row in 0 until m) {
+        for (j in 0 until n) {
+            prefixY[row][j + 1] = prefixY[row][j] + matrix[row][j]
+        }
+    }
+    val prefixX = Array(m + 1) { IntArray(n + 1) }
+    for (col in 0 until n) {
+        for (i in 0 until m) {
+            prefixX[i + 1][col] = prefixX[i][col] + matrix[i][col]
+        }
+    }
+
+    for (row in 0 until m) {
+        for (i in 0 until row) {
+            for (col in 0 until n) {
+                val left = prefixX[row + 1][col] - prefixX[i][col]
+                val right = prefixX
+            }
+        }
+    }
+    return 0
+}
 
 fun main() {
     println(
