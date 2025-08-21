@@ -421,30 +421,6 @@ fun finalPrices(prices: IntArray): IntArray {
     return answers
 }
 
-
-fun numSubmat(mat: Array<IntArray>): Int {
-    val m = mat.size
-    val n = mat[0].size
-
-    val histogram = IntArray(n)
-
-    var maxArea = 0
-    for (i in 0 until m) {
-
-        for (j in 0 until n) {
-            if (mat[i][j] == 0) {
-                histogram[j] = 0
-            } else {
-                histogram[j]++
-            }
-        }
-
-        maxArea = max(maxArea, largestRectangleArea(histogram))
-    }
-    //  println(matrix.joinToString("\n") { it.toList().toString() })
-    return maxArea
-}
-
 fun largestRectangleArea(heights: IntArray): Int {
     val n = heights.size
     //  println(heights.toList())

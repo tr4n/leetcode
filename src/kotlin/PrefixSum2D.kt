@@ -1,5 +1,8 @@
 package org.example
 
+import home.to2DIntArray
+import java.util.*
+
 class PrefixSum2D(private val matrix: Array<IntArray>) {
 
     private val m = matrix.size
@@ -30,6 +33,69 @@ class PrefixSum2D(private val matrix: Array<IntArray>) {
     }
 }
 
+fun numSubmat(mat: Array<IntArray>): Int {
+    val prefixSum = PrefixSum2D(mat)
+    val m = mat.size
+    val n = mat[0].size
+
+    val stack = Stack<Int>()
+    var cnt = 0
+    val leftIndex = Array(m) { i -> IntArray(n) { -1 } }
+    for (i in 0 until m) {
+        stack.clear()
+        for (j in (n - 1) downTo 0) {
+            while (stack.isNotEmpty() && mat[i][j] < mat[i][stack.peek()]) {
+                val end = stack.pop()
+                leftIndex[i][end] = j + 1
+            }
+            if (mat[i][j] == 1) stack.push(j)
+        }
+        while (stack.isNotEmpty()) {
+            val end = stack.pop()
+            leftIndex[i][end] = 0
+        }
+    }
+
+    val topIndex = Array(m) { IntArray(n) { -1 } }
+    for (j in 0 until n) {
+        stack.clear()
+        for (i in (m - 1) downTo 0) {
+            while (stack.isNotEmpty() && mat[i][j] < mat[stack.peek()][j]) {
+                val end = stack.pop()
+                topIndex[end][j] = i + 1
+            }
+            if (mat[i][j] == 1) stack.push(i)
+        }
+        while (stack.isNotEmpty()) {
+            val end = stack.pop()
+            topIndex[end][j] = 0
+        }
+    }
+
+    for (i in 0 until m) {
+        for (j in 0 until n) {
+            if (mat[i][j] == 0) continue
+            for (x in topIndex[i][j]..i) {
+                for (y in leftIndex[i][j]..j) {
+                    val width = i - x + 1
+                    val height = j - y + 1
+                    val sum = prefixSum.query(x, y, i, j)
+                    if (sum == width * height) cnt++
+                }
+            }
+        }
+    }
+
+//    println(mat.print())
+//    println("")
+//    println(leftIndex.print())
+//    println()
+//    println(topIndex.print())
+
+    return cnt
+}
+
+
 fun countSquares(matrix: Array<IntArray>): Int {
     val prefixSum = PrefixSum2D(matrix)
     val m = matrix.size
@@ -48,5 +114,13 @@ fun countSquares(matrix: Array<IntArray>): Int {
         }
     }
     return cnt
+}
+
+fun main() {
+    println(
+        numSubmat(
+            "[[0,1,1,0],[0,1,1,1],[1,1,1,0]]".to2DIntArray()
+        )
+    )
 }
 
