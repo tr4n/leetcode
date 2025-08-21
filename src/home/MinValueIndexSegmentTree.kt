@@ -1,4 +1,0 @@
-package home
-
-class MinValueIndexSegmentTree {
-}
