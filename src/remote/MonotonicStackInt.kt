@@ -1,9 +1,10 @@
 package remote
 
+import local.to2DIntArray
 import java.util.*
 import kotlin.math.max
 
-class MonotonicStack(private val arr: IntArray) {
+class MonotonicStackInt(private val arr: IntArray) {
     private val n = arr.size
 
     fun greaterRight(): IntArray = nextIndex(strict = true, greater = true, toRight = true)
@@ -36,6 +37,47 @@ class MonotonicStack(private val arr: IntArray) {
     }
 
     private fun compare(a: Int, b: Int, greater: Boolean, strict: Boolean): Boolean {
+        return if (greater) {
+            if (strict) a > b else a >= b
+        } else {
+            if (strict) a < b else a <= b
+        }
+    }
+}
+
+class MonotonicStack<T : Comparable<T>>(private val arr: List<T>) {
+    private val n = arr.size
+
+    fun greaterRight(): IntArray = nextIndex(strict = true, greater = true, toRight = true)
+    fun greaterEqualRight(): IntArray = nextIndex(strict = false, greater = true, toRight = true)
+    fun smallerRight(): IntArray = nextIndex(strict = true, greater = false, toRight = true)
+    fun smallerEqualRight(): IntArray = nextIndex(strict = false, greater = false, toRight = true)
+
+    fun greaterLeft(): IntArray = nextIndex(strict = true, greater = true, toRight = false)
+    fun greaterEqualLeft(): IntArray = nextIndex(strict = false, greater = true, toRight = false)
+    fun smallerLeft(): IntArray = nextIndex(strict = true, greater = false, toRight = false)
+    fun smallerEqualLeft(): IntArray = nextIndex(strict = false, greater = false, toRight = false)
+
+    private fun nextIndex(strict: Boolean, greater: Boolean, toRight: Boolean): IntArray {
+        val res = if (toRight) {
+            IntArray(n) { n }
+        } else {
+            IntArray(n) { -1 }
+        }
+        val stack = ArrayDeque<Int>()
+
+        val range = if (toRight) 0 until n else (n - 1 downTo 0)
+        for (i in range) {
+            while (stack.isNotEmpty() && compare(arr[i], arr[stack.last()], greater, strict)) {
+                val idx = stack.removeLast()
+                res[idx] = i
+            }
+            stack.addLast(i)
+        }
+        return res
+    }
+
+    private fun compare(a: T, b: T, greater: Boolean, strict: Boolean): Boolean {
         return if (greater) {
             if (strict) a > b else a >= b
         } else {
@@ -558,7 +600,7 @@ fun maximumSumOfHeights(maxHeights: List<Int>): Long {
 fun validSubarraySize(nums: IntArray, threshold: Int): Int {
     val n = nums.size
 
-    val monotonicStack = MonotonicStack(nums)
+    val monotonicStack = MonotonicStackInt(nums)
     val smallerLeft = monotonicStack.smallerLeft()
     val smallerRight = monotonicStack.smallerRight()
 
@@ -581,7 +623,7 @@ fun validSubarraySize(nums: IntArray, threshold: Int): Int {
 fun maxSumMinProduct(nums: IntArray): Int {
     val n = nums.size
 
-    val monotonicStack = MonotonicStack(nums)
+    val monotonicStack = MonotonicStackInt(nums)
     val smallerLeft = monotonicStack.smallerLeft()
     val smallerRight = monotonicStack.smallerRight()
     val sums = LongArray(n + 1)
@@ -605,8 +647,61 @@ fun maxSumMinProduct(nums: IntArray): Int {
     return (maxProduct % 1_000_000_007L).toInt()
 }
 
+fun carFleet(target: Int, position: IntArray, speed: IntArray): Int {
+    val n = position.size
+    val times = (0 until n).map {
+        Pair(
+            position[it],
+            (target - position[it]).toDouble() / speed[it].toDouble(),
+        )
+    }.sortedBy { it.first }.map { it.second }
+
+    var maxSoFar = -1.0
+    var cnt = 0
+    for (i in (n - 1) downTo 0) {
+        if (times[i] > maxSoFar) {
+            cnt++
+            maxSoFar = times[i]
+        }
+    }
+    return cnt
+}
+
+fun getCollisionTimes(cars: Array<IntArray>): DoubleArray {
+    val n = cars.size
+    val speeds = cars.map { it[1] }
+    val monotonicStack = MonotonicStack(speeds)
+    val smallerRights = monotonicStack.smallerRight()
+
+    val answers = DoubleArray(n) { -1.0 }
+
+    val treeSet = TreeMap<Double, Int>()
+
+    for (i in (n - 1) downTo 0) {
+        val pos = cars[i][0]
+        val speed = cars[i][1]
+        var right = smallerRights[i]
+        if (right >= n) continue
+
+        var collideTime = 0.0
+        var estimatedTime = 1.0
+
+        while (right < n && estimatedTime >= collideTime) {
+            val (nextPos, nextSpeed) = cars[right]
+            collideTime = answers[right]
+            estimatedTime = (nextPos - pos).toDouble() / (speed - nextSpeed).toDouble()
+            right = smallerRights[right]
+        }
+        answers[i] = estimatedTime
+        treeSet[estimatedTime] = i
+    }
+    return answers
+}
+
 fun main() {
     println(
-        validSubarraySize(intArrayOf(6, 5, 6, 5, 8), 7)
+        getCollisionTimes(
+            "[[1,2],[3,4],[7,3],[8,2],[10,1]]".to2DIntArray()
+        ).toList()
     )
 }

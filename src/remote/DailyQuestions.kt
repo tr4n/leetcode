@@ -3445,9 +3445,47 @@ class Solution(val n: Int, val blacklist: IntArray) {
     }
 }
 
+fun maxSumDistinctTriplet(x: IntArray, y: IntArray): Int {
+    val n = x.size
+    val xToY = mutableMapOf<Int, Int>()
+
+    for (i in 0 until n) {
+        val numX = x[i]
+        xToY[numX] = maxOf(
+            xToY.getOrDefault(numX, Int.MIN_VALUE),
+            y[i]
+        )
+    }
+    if (xToY.values.size < 3) return -1
+    val list = xToY.values.sortedDescending()
+    return list[0] + list[1] + list[2]
+}
+
+fun largestValsFromLabels(values: IntArray, labels: IntArray, numWanted: Int, useLimit: Int): Int {
+    val map = mutableMapOf<Int, PriorityQueue<Int>>()
+    val n = values.size
+    for (i in 0 until n) {
+        val label = labels[i]
+        val value = values[i]
+        if (map[label] == null) {
+            map[label] = PriorityQueue()
+        }
+        map[label]?.add(value)
+        if ((map[label]?.size ?: 0) > useLimit) {
+            map[label]?.poll()
+        }
+    }
+    return map.values.flatten().sortedDescending().take(numWanted).sum()
+}
+
+
+
 fun main() {
 
     println(
-        minOperations("1").toList()
+        maxSumDistinctTriplet(
+            intArrayOf(8, 20, 19, 19),
+            intArrayOf(8, 5, 15, 20)
+        )
     )
 }
