@@ -31,6 +31,37 @@ class MaxSparseTable(private val arr: List<Int>) {
     }
 }
 
+class MaxSparseTableLong(private val arr: List<Long>) {
+    private val n = arr.size
+    private val log = IntArray(n + 1)
+    private val stMax: Array<LongArray>
+
+    init {
+        for (i in 2..n) log[i] = log[i / 2] + 1
+
+        val k = log[n] + 1
+        stMax = Array(n) { LongArray(k) }
+
+        for (i in 0 until n) {
+            stMax[i][0] = arr[i]
+        }
+
+        for (k in 1 until k) {
+            var i = 0
+            while (i + (1 shl k) <= n) {
+                stMax[i][k] = maxOf(stMax[i][k - 1], stMax[i + (1 shl (k - 1))][k - 1])
+                i++
+            }
+        }
+    }
+
+    fun queryMax(start: Int, end: Int): Long {
+        val len = end - start + 1
+        val k = log[len]
+        return maxOf(stMax[start][k], stMax[end - (1 shl k) + 1][k])
+    }
+}
+
 fun findPrefixScore(nums: IntArray): LongArray {
     val n = nums.size
     var preScore = 0L

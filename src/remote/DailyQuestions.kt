@@ -2,6 +2,7 @@ package remote
 
 import java.util.*
 import kotlin.math.*
+import kotlin.random.Random
 
 fun totalFruit(fruits: IntArray): Int {
     val queue = ArrayDeque<Int>()
@@ -3327,7 +3328,7 @@ fun minOperations(boxes: String): IntArray {
     val answers = IntArray(n)
     for (i in 0 until n) {
         val box = boxes[i].digitToInt()
-        val index = if(box == 1) i else 0
+        val index = if (box == 1) i else 0
         val rightIndexes = totalIndexes - leftIndexes - index
         val rightBoxes = totalBoxes - leftBoxes - box
 
@@ -3338,6 +3339,110 @@ fun minOperations(boxes: String): IntArray {
         leftBoxes += box
     }
     return answers
+}
+
+fun minimumArea(grid: Array<IntArray>): Int {
+    val m = grid.size
+    val n = grid[0].size
+
+    var minX = Int.MAX_VALUE
+    var minY = Int.MAX_VALUE
+
+    var maxX = Int.MIN_VALUE
+    var maxY = Int.MIN_VALUE
+
+    for (i in 0 until m) {
+        for (j in 0 until n) {
+            if (grid[i][j] == 0) continue
+            minX = minOf(minX, i)
+            minY = minOf(minY, j)
+            maxX = maxOf(maxX, i)
+            maxY = maxOf(maxY, j)
+        }
+    }
+
+    return (maxX - minX + 1) * (maxY - minY + 1)
+}
+
+fun minArea(image: Array<CharArray>, x: Int, y: Int): Int {
+    val m = image.size
+    val n = image[0].size
+
+    var minX = Int.MAX_VALUE
+    var maxX = Int.MIN_VALUE
+    var minY = Int.MAX_VALUE
+    var maxY = Int.MIN_VALUE
+
+    for (i in 0 until m) {
+        val row = image[i]
+
+        // tìm first_one
+        var l = 0
+        var r = n - 1
+        var firstOne = -1
+        while (l <= r) {
+            val mid = (l + r) / 2
+            if (row[mid] == '1') {
+                firstOne = mid
+                r = mid - 1
+            } else {
+                l = mid + 1
+            }
+        }
+
+        if (firstOne == -1) continue  // không có '1' trong hàng này
+
+        // tìm last_one
+        l = firstOne
+        r = n - 1
+        var lastOne = firstOne
+        while (l <= r) {
+            val mid = (l + r) / 2
+            if (row[mid] == '1') {
+                lastOne = mid
+                l = mid + 1
+            } else {
+                r = mid - 1
+            }
+        }
+
+        // cập nhật minX, maxX, minY, maxY
+        minX = minOf(minX, i)
+        maxX = maxOf(maxX, i)
+        minY = minOf(minY, firstOne)
+        maxY = maxOf(maxY, lastOne)
+    }
+
+    if (minX == Int.MAX_VALUE) return 0  // không có '1'
+
+    val height = maxX - minX + 1
+    val width = maxY - minY + 1
+    return height * width
+}
+
+class Solution(val n: Int, val blacklist: IntArray) {
+    private val remainSize: Int
+    private val map = HashMap<Int, Int>()
+    private val rand = Random
+
+    init {
+        val set = blacklist.toHashSet()
+        remainSize = n - set.size
+
+        var last = n - 1
+        for (b in blacklist) {
+            if (b < remainSize) {
+                while (last in set) last--
+                map[b] = last
+                last--
+            }
+        }
+    }
+
+    fun pick(): Int {
+        val r = rand.nextInt(remainSize)
+        return map.getOrDefault(r, r)
+    }
 }
 
 fun main() {

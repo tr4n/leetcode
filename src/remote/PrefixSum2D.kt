@@ -1,6 +1,5 @@
 package remote
 
-import local.to2DIntArray
 import java.util.*
 
 class PrefixSum2D(private val matrix: Array<IntArray>) {
@@ -154,36 +153,58 @@ fun countSquares(matrix: Array<IntArray>): Int {
 fun maxSumSubmatrix(matrix: Array<IntArray>, k: Int): Int {
     val m = matrix.size
     val n = matrix[0].size
-
-    val prefixY = Array(m + 1) { IntArray(n + 1) }
+    val prefixSum2D = PrefixSum2D(matrix)
+    //  println(matrix.print())
+    var minDiff = Int.MAX_VALUE
+    var closetSum = 0
     for (row in 0 until m) {
-        for (j in 0 until n) {
-            prefixY[row][j + 1] = prefixY[row][j] + matrix[row][j]
-        }
-    }
-    val prefixX = Array(m + 1) { IntArray(n + 1) }
-    for (col in 0 until n) {
-        for (i in 0 until m) {
-            prefixX[i + 1][col] = prefixX[i][col] + matrix[i][col]
-        }
-    }
+        for (i in 0..row) {
 
-    for (row in 0 until m) {
-        for (i in 0 until row) {
+            val tree = TreeSet<Int>()
+            tree.add(0)
+            var sum = 0
             for (col in 0 until n) {
-                val left = prefixX[row + 1][col] - prefixX[i][col]
-                val right = prefixX
+                sum += prefixSum2D.query(i, col, row, col)
+                //    println("row($i $row), col ($col) $sum")
+                if (sum == k) return k
+                var diff = k - sum
+                if (diff in 0..<minDiff) {
+                    minDiff = diff
+                    closetSum = sum
+                }
+                // sum - left <= k -> left >= sum - k
+                val leftSum = tree.ceiling(sum - k)
+                if (leftSum == null) {
+                    tree.add(sum)
+                    continue
+                }
+                val rectSum = sum - leftSum
+                if (rectSum == k) return k
+                diff = k - rectSum
+                if (diff in 0..<minDiff) {
+                    minDiff = diff
+                    closetSum = rectSum
+                }
+                tree.add(sum)
             }
+            //           println("row($i $row), $tree")
         }
     }
-    return 0
+    return closetSum
 }
 
-fun main() {
-    println(
-        numSubmat(
-            "[[0,1,1,0],[0,1,1,1],[1,1,1,0]]".to2DIntArray()
-        )
-    )
+fun matrixBlockSum(mat: Array<IntArray>, k: Int): Array<IntArray> {
+    val m = mat.size
+    val n = mat[0].size
+    val prefixSum2D = PrefixSum2D(mat)
+    return Array(m) { i ->
+        IntArray(n) { j ->
+            prefixSum2D.query(
+                (i - k).coerceIn(0, m - 1),
+                (j - k).coerceIn(0, n - 1),
+                (i + k).coerceIn(0, m - 1),
+                (j + k).coerceIn(0, n - 1)
+            )
+        }
+    }
 }
-
