@@ -670,6 +670,7 @@ fun carFleet(target: Int, position: IntArray, speed: IntArray): Int {
 fun getCollisionTimes(cars: Array<IntArray>): DoubleArray {
     val n = cars.size
     val speeds = cars.map { it[1] }
+    val (target, lastSpeed) = cars.last()
     val monotonicStack = MonotonicStack(speeds)
     val smallerRights = monotonicStack.smallerRight()
 
@@ -686,7 +687,7 @@ fun getCollisionTimes(cars: Array<IntArray>): DoubleArray {
         var collideTime = 0.0
         var estimatedTime = 1.0
 
-        while (right < n && estimatedTime >= collideTime) {
+        while (right <  n && estimatedTime >= collideTime) {
             val (nextPos, nextSpeed) = cars[right]
             collideTime = answers[right]
             estimatedTime = (nextPos - pos).toDouble() / (speed - nextSpeed).toDouble()

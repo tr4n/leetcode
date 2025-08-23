@@ -139,71 +139,71 @@ class LazyMinWithShiftedIndexSegmentTree(private val data: IntArray) {
 }
 
 
-fun minInteger(num: String, k: Int): String {
-    val arr = num.map { it.digitToInt() }
-    val tree = LazyMinWithShiftedIndexSegmentTree(arr.toIntArray())
-    val sumTree = SumIntSegmentTree(IntArray(arr.size) {1})
-    val minNum = arr.sorted().joinToString("")
-    println(arr)
-    val n = arr.size
-    var t = k
-    val result = mutableListOf<Int>()
-    val indexSet = mutableSetOf<Int>()
-    while (t > 0) {
-        println("t = $t")
-        val start = result.size
-        if (start == n) break
-        var l = 0
-        var r = n
-        val target = t.coerceAtMost(n)
-        while(l <= r) {
-            val mid = (l + r)/2
-            val count = sumTree.sumRange(0, mid)
-            if(count > target) {
-                r = mid - 1
-            } else {
-                l = mid
-            }
-        }
-        val end = l
+//fun minInteger(num: String, k: Int): String {
+//    val arr = num.map { it.digitToInt() }
+//    val tree = LazyMinWithShiftedIndexSegmentTree(arr.toIntArray())
+//    val sumTree = SumIntSegmentTree(IntArray(arr.size) {1})
+//    val minNum = arr.sorted().joinToString("")
+//    println(arr)
+//    val n = arr.size
+//    var t = k
+//    val result = mutableListOf<Int>()
+//    val indexSet = mutableSetOf<Int>()
+//    while (t > 0) {
+//        println("t = $t")
+//        val start = result.size
+//        if (start == n) break
+//        var l = 0
+//        var r = n
+//        val target = t.coerceAtMost(n)
+//        while(l <= r) {
+//            val mid = (l + r)/2
+//            val count = sumTree.sumRange(0, mid)
+//            if(count > target) {
+//                r = mid - 1
+//            } else {
+//                l = mid
+//            }
+//        }
+//        val end = l
+////        println(tree.queryList().sortedBy { it.index }.map {
+////            //  arr[it.rawIndex] }
+////            it.index
+////        })
+//        val (minValue, minIndex, rawIndex) = tree.queryMin(0, end)
+//        println("$minValue-$minIndex-$rawIndex")
+//        if (minValue > 9) {
+//            break
+//        }
+//        tree.updateValue(rawIndex, 99)
+//        if (rawIndex > start) {
+//       //     tree.shift(rawIndex, rawIndex, -100)
+//            tree.shift(0, rawIndex - 1, +1)
+//        }
 //        println(tree.queryList().sortedBy { it.index }.map {
 //            //  arr[it.rawIndex] }
 //            it.index
 //        })
-        val (minValue, minIndex, rawIndex) = tree.queryMin(0, end)
-        println("$minValue-$minIndex-$rawIndex")
-        if (minValue > 9) {
-            break
-        }
-        tree.updateValue(rawIndex, 99)
-        if (rawIndex > start) {
-       //     tree.shift(rawIndex, rawIndex, -100)
-            tree.shift(0, rawIndex - 1, +1)
-        }
-        println(tree.queryList().sortedBy { it.index }.map {
-            //  arr[it.rawIndex] }
-            it.index
-        })
-        result.add(minValue)
-        indexSet.add(rawIndex)
-        t -= minIndex
-  //      println("$minIndex-$minValue")
-//        println(tree.queryList().sortedBy { it.index }.map {
-//            //  arr[it.rawIndex] }
-//            it.index
-//        })
-
-    }
-
-    for (i in 0 until n) {
-        if (i !in indexSet) result.add(arr[i])
-    }
-
-    return result.joinToString("")
-}
+//        result.add(minValue)
+//        indexSet.add(rawIndex)
+//        t -= minIndex
+//  //      println("$minIndex-$minValue")
+////        println(tree.queryList().sortedBy { it.index }.map {
+////            //  arr[it.rawIndex] }
+////            it.index
+////        })
+//
+//    }
+//
+//    for (i in 0 until n) {
+//        if (i !in indexSet) result.add(arr[i])
+//    }
+//
+//    return result.joinToString("")
+//}
 
 fun main() {
     println(
-        minInteger("4321", 4)
+       // minInteger("4321", 4)
     )
 }

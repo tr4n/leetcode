@@ -1,6 +1,9 @@
 package remote
 
+import local.to2DIntArray
 import java.util.*
+import kotlin.math.max
+import kotlin.math.min
 
 class PrefixSum2D(private val matrix: Array<IntArray>) {
 
@@ -288,4 +291,175 @@ fun numSubmatrixSumTarget(matrix: Array<IntArray>, target: Int): Int {
         }
     }
     return cnt
+}
+//fun minSubmatrixSum(minX: Int, minY: Int, maxX: Int, maxY: Int): Int {
+//    var minSum = Int.MAX_VALUE
+//    for (row in minX until maxX) {
+//        val colSums = IntArray(maxY - minY)
+//        for (i in row until maxX) {
+//            for (col in minY until maxY) {
+//                colSums[col - minY] += prefixSum2D.query(i, col, i, col)
+//            }
+//            var current = 0
+//            for (v in colSums) {
+//                current = minOf(v, current + v)
+//                minSum = minOf(minSum, current)
+//            }
+//        }
+//    }
+//    return minSum
+//}
+
+fun minimumSum(grid: Array<IntArray>): Int {
+    val rows = grid.size
+    val cols = if (grid.isNotEmpty()) grid[0].size else 0
+    if (rows == 0 || cols == 0) return 0
+
+    val rowBBoxes = Array(rows) { Pair(Int.MAX_VALUE, -1) }
+    for (r in 0 until rows) {
+        var minC = Int.MAX_VALUE
+        var maxC = -1
+        for (c in 0 until cols) {
+            if (grid[r][c] == 1) {
+                minC = min(minC, c)
+                maxC = max(maxC, c)
+            }
+        }
+        rowBBoxes[r] = Pair(minC, maxC)
+    }
+
+    val colBBoxes = Array(cols) { Pair(Int.MAX_VALUE, -1) }
+    for (c in 0 until cols) {
+        var minR = Int.MAX_VALUE
+        var maxR = -1
+        for (r in 0 until rows) {
+            if (grid[r][c] == 1) {
+                minR = min(minR, r)
+                maxR = max(maxR, r)
+            }
+        }
+        colBBoxes[c] = Pair(minR, maxR)
+    }
+
+    fun getHorizontalSliceArea(r1: Int, r2: Int): Int {
+        var minR = Int.MAX_VALUE
+        var maxR = -1
+        var minC = Int.MAX_VALUE
+        var maxC = -1
+        var hasOne = false
+
+        for (r in r1..r2) {
+            val rowBound = rowBBoxes[r]
+            if (rowBound.first <= rowBound.second) { // Has one
+                hasOne = true
+                minR = min(minR, r)
+                maxR = max(maxR, r)
+                minC = min(minC, rowBound.first)
+                maxC = max(maxC, rowBound.second)
+            }
+        }
+        return if (hasOne) (maxR - minR + 1) * (maxC - minC + 1) else 0
+    }
+
+    fun getVerticalSliceArea(c1: Int, c2: Int): Int {
+        var minR = Int.MAX_VALUE
+        var maxR = -1
+        var minC = Int.MAX_VALUE
+        var maxC = -1
+        var hasOne = false
+
+        for (c in c1..c2) {
+            val colBound = colBBoxes[c]
+            if (colBound.first <= colBound.second) {
+                hasOne = true
+                minR = min(minR, colBound.first)
+                maxR = max(maxR, colBound.second)
+                minC = min(minC, c)
+                maxC = max(maxC, c)
+            }
+        }
+        return if (hasOne) (maxR - minR + 1) * (maxC - minC + 1) else 0
+    }
+
+    fun getBoundingBoxArea(r1: Int, c1: Int, r2: Int, c2: Int): Int {
+        var minRow = Int.MAX_VALUE
+        var maxRow = -1
+        var minCol = Int.MAX_VALUE
+        var maxCol = -1
+        var hasOne = false
+        for (r in r1..r2) {
+            for (c in c1..c2) {
+                if (grid[r][c] == 1) {
+                    hasOne = true
+                    minRow = min(minRow, r)
+                    maxRow = max(maxRow, r)
+                    minCol = min(minCol, c)
+                    maxCol = max(maxCol, c)
+                }
+            }
+        }
+        return if (hasOne) (maxRow - minRow + 1) * (maxCol - minCol + 1) else 0
+    }
+
+
+    var minTotalArea = Int.MAX_VALUE
+
+    if (rows >= 3) {
+        for (r1 in 0 until rows - 2) {
+            for (r2 in r1 + 1 until rows - 1) {
+                val area1 = getHorizontalSliceArea(0, r1)
+                val area2 = getHorizontalSliceArea(r1 + 1, r2)
+                val area3 = getHorizontalSliceArea(r2 + 1, rows - 1)
+                minTotalArea = min(minTotalArea, area1 + area2 + area3)
+            }
+        }
+    }
+
+    if (cols >= 3) {
+        for (c1 in 0 until cols - 2) {
+            for (c2 in c1 + 1 until cols - 1) {
+                val area1 = getVerticalSliceArea(0, c1)
+                val area2 = getVerticalSliceArea(c1 + 1, c2)
+                val area3 = getVerticalSliceArea(c2 + 1, cols - 1)
+                minTotalArea = min(minTotalArea, area1 + area2 + area3)
+            }
+        }
+    }
+
+    if (rows >= 2 && cols >= 2) {
+        for (r in 0 until rows - 1) {
+            for (c in 0 until cols - 1) {
+
+                var a1 = getHorizontalSliceArea(0, r)
+                var a2 = getBoundingBoxArea(r + 1, 0, rows - 1, c)
+                var a3 = getBoundingBoxArea(r + 1, c + 1, rows - 1, cols - 1)
+                minTotalArea = min(minTotalArea, a1 + a2 + a3)
+
+                a1 = getHorizontalSliceArea(r + 1, rows - 1)
+                a2 = getBoundingBoxArea(0, 0, r, c)
+                a3 = getBoundingBoxArea(0, c + 1, r, cols - 1)
+                minTotalArea = min(minTotalArea, a1 + a2 + a3)
+
+                a1 = getVerticalSliceArea(0, c)
+                a2 = getBoundingBoxArea(0, c + 1, r, cols - 1)
+                a3 = getBoundingBoxArea(r + 1, c + 1, rows - 1, cols - 1)
+                minTotalArea = min(minTotalArea, a1 + a2 + a3)
+
+                a1 = getVerticalSliceArea(c + 1, cols - 1)
+                a2 = getBoundingBoxArea(0, 0, r, c)
+                a3 = getBoundingBoxArea(r + 1, 0, rows - 1, c)
+                minTotalArea = min(minTotalArea, a1 + a2 + a3)
+            }
+        }
+    }
+
+    return if (minTotalArea == Int.MAX_VALUE) 0 else minTotalArea
+}
+
+fun main() {
+    println(
+        minimumSum(
+            "[[1,0,1],[1,1,1]]".to2DIntArray()
+        )
+    )
 }

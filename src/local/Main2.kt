@@ -779,28 +779,3 @@ fun largestRectangleArea(heights: IntArray): Int {
     return maxArea
 
 }
-
-fun countIncreasingSubsequencesK(nums: IntArray, k: Int): Long {
-    val n = nums.size
-    val maxVal = nums.max()
-
-    val tree = Array(k) {
-        SumLongSegmentTree(List(maxVal + 1) { 0L })
-    }
-
-    for (num in nums) {
-        tree[0].update(num, 1)
-
-        for (len in 1 until k) {
-            val count = tree[len - 1].sumRange(1, num - 1)
-            if(count > 0) tree[len].update(num, count)
-        }
-    }
-
-    for (i in 0 until k) {
-        println((0 until n).map {
-            tree[i].sumRange(nums[it], nums[it])
-        })
-    }
-    return tree[k - 1].sumRange(1, maxVal)
-}

@@ -3478,14 +3478,252 @@ fun largestValsFromLabels(values: IntArray, labels: IntArray, numWanted: Int, us
     return map.values.flatten().sortedDescending().take(numWanted).sum()
 }
 
+fun subdomainVisits(cpdomains: Array<String>): List<String> {
+    val map = mutableMapOf<String, Int>()
 
+    for (domain in cpdomains) {
+        var (rep, s) = domain.split(" ")
+        val cnt = rep.toIntOrNull() ?: 0
+        while (s.isNotEmpty()) {
+            map[s] = map.getOrDefault(s, 0) + cnt
+            if (!s.contains(".")) break
+            s = s.substringAfter('.')
+        }
+    }
+
+    return map.map { (key, value) -> "$value $key" }
+}
+
+fun matrixSum(nums: Array<IntArray>): Int {
+    val m = nums.size
+    val n = nums[0].size
+
+    for (row in nums) row.sort()
+    var sum = 0
+    for (j in 0 until m) {
+        var maxValue = Int.MIN_VALUE
+        for (i in 0 until n) {
+            maxValue = maxOf(maxValue, nums[i][j])
+        }
+        sum += maxValue
+    }
+    return sum
+}
+
+fun largestIsland(grid: Array<IntArray>): Int {
+    val m = grid.size
+    val n = grid[0].size
+    val visited = Array(m) { BooleanArray(n) }
+    //   println(grid.print())
+    //  println()
+
+    val dirs = arrayOf(intArrayOf(1, 0), intArrayOf(-1, 0), intArrayOf(0, 1), intArrayOf(0, -1))
+
+    fun dfs(r: Int, c: Int, value: Int): Int {
+        if (r !in 0 until m || c !in 0 until n) return 0
+        if (visited[r][c] || grid[r][c] != 1) return 0
+        var cnt = 1
+        visited[r][c] = true
+        grid[r][c] = value
+        for ((dr, dc) in dirs) {
+            val x = r + dr
+            val y = c + dc
+            cnt += dfs(x, y, value)
+        }
+        return cnt
+    }
+
+    val areas = IntArray(m * n + 11)
+    var count = 10
+    for (i in 0 until m) {
+        for (j in 0 until n) {
+            if (!visited[i][j] && grid[i][j] == 1) {
+                areas[count] = dfs(i, j, count)
+                count++
+            }
+        }
+    }
+    //  println(grid.print())
+
+
+    var maxArea = areas.max()
+    for (i in 0 until m) {
+        for (j in 0 until n) {
+            if (grid[i][j] == 0) {
+                val set = mutableSetOf<Int>()
+                for ((dr, dc) in dirs) {
+                    val x = i + dr
+                    val y = j + dc
+                    if (x in 0 until m && y in 0 until n && grid[x][y] > 0) {
+                        set.add(grid[x][y])
+                    }
+                }
+                //  println("$i $j $set")
+                val area = set.sumOf { areas[it] } + 1
+                maxArea = maxOf(maxArea, area)
+            }
+        }
+    }
+    return maxArea
+}
+
+fun countPalindromicSubsequence(s: String): Int {
+    val n = s.length
+    val map = mutableMapOf<Char, MutableList<Int>>()
+    for (i in 0 until n) {
+        val ch = s[i]
+        if (map[ch] == null) {
+            map[ch] = mutableListOf(i)
+        } else {
+            map[ch]?.add(i)
+        }
+    }
+    fun countDistinctCharacters(start: Int, end: Int): Int {
+        if (end - start < 2) return 0
+        var cnt = 0
+        for (ch in 'a'..'z') {
+            val list = map[ch] ?: continue
+            var l = 0
+            var r = list.size - 1
+            var idx = -1
+            while (l <= r) {
+                val mid = (l + r) / 2
+                val id = list[mid]
+                if (id in (start + 1)..<end) {
+                    cnt++
+                    break
+                }
+                if (id > start) {
+                    idx = mid
+                    r = mid - 1
+                } else {
+                    l = mid + 1
+                }
+            }
+            if (idx > 0 && list[idx] in (start + 1)..<end) {
+                cnt++
+            }
+        }
+        return cnt
+    }
+    //   println(s)
+    var cnt = 0
+    for (list in map.values) {
+        if (list.size < 2) continue
+        val start = list.first()
+        val end = list.last()
+        val distinctCount = countDistinctCharacters(start, end)
+        //  println("$start $end $distinctCount")
+        cnt += distinctCount
+    }
+    return cnt
+}
+
+fun countPalindromes(s: String): Int {
+    val mod = 1_000_000_007L
+    val n = s.length
+    val indexes = Array(10) { mutableListOf<Int>() }
+    for (i in 0 until n) {
+        val ch = s[i] - '0'
+        indexes[ch].add(i)
+    }
+
+    fun findFirstAndLastInRange(list: List<Int>, a: Int, b: Int): Pair<Int, Int>? {
+        if (a >= b) return null
+        val n = list.size
+
+        var l = 0
+        var r = n - 1
+        var firstIndex = n
+        while (l <= r) {
+            val mid = (l + r) / 2
+            if (list[mid] > a) {
+                firstIndex = mid
+                r = mid - 1
+            } else {
+                l = mid + 1
+            }
+        }
+
+        l = 0
+        r = n - 1
+        var lastIndex = -1
+        while (l <= r) {
+            val mid = (l + r) / 2
+            if (list[mid] < b) {
+                lastIndex = mid
+                l = mid + 1
+            } else {
+                r = mid - 1
+            }
+        }
+
+        val first = if (firstIndex in 0 until n && list[firstIndex] in (a + 1)..<b) {
+            list[firstIndex]
+        } else return null
+        val second = if (lastIndex in 0 until n && list[lastIndex] in (a + 1)..<b) {
+            list[lastIndex]
+        } else return null
+        if (firstIndex >= lastIndex) return null
+        return first to second
+    }
+
+    //   println(s)
+    var cnt = 0L
+    val validNumbers = (0..9).filter { indexes[it].size >= 2 }
+
+    for (firstNum in validNumbers) {
+        val firstIndexes = indexes[firstNum]
+        val maxPos5 = firstIndexes.last()
+        for (secondNum in validNumbers) {
+            val secondIndexes = indexes[secondNum]
+            val maxPos4 = secondIndexes.last()
+
+            for (i1 in 0 until firstIndexes.size -1 ) {
+                val pos1 = firstIndexes[i1]
+                val pos2AvailableList = secondIndexes.filter { it in (pos1 + 1)..<maxPos4 }
+                println("Pos2: $pos2AvailableList")
+                for (i2 in 0 until secondIndexes.size - 1) {
+                    val pos2 = secondIndexes[i2]
+                    if (pos2 !in (pos1 + 1)..<maxPos4) continue
+                    val pos4AvailableList = secondIndexes.filter { it in (pos2 + 2)..<maxPos5 }
+                    println("Pos4: $pos4AvailableList")
+
+                    for (i4 in (i2 + 1) until secondIndexes.size) {
+                        val pos4 = secondIndexes[i4]
+                        if (pos4 !in (pos2 + 1)..maxPos4) continue
+                        println("Pos3 ${(pos2 + 1)..(pos4 -1)}")
+                        val pos3Count = (pos4 - pos2 - 1).toLong().coerceAtLeast(0L)
+                        val (pos5Start, pos5End) =
+                            findFirstAndLastInRange(firstIndexes, pos4, maxPos5 + 1) ?: continue
+                        val pos5Count = (pos5End - pos5Start + 1).toLong().coerceAtLeast(0L)
+                      //  println("$pos1 $pos2 $pos4 $pos3Count $pos5Count ${s[pos1]}${s[pos2]}_${s[pos4]}${s[pos5Start]}")
+                        val count = (pos3Count * pos5Count) % mod
+                        cnt = (cnt % mod + count % mod) % mod
+                    }
+                }
+            }
+
+//            for (i1 in 0 until firstIndexes.size - 1) {
+//                val pos1 = firstIndexes[i1]
+//                for (i2 in i1 + 1 until firstIndexes.size) {
+//                    val pos5 = firstIndexes[i2]
+//                    val (pos2, pos4) = findFirstAndLastInRange(secondIndexes, pos1, pos5) ?: continue
+//
+//                    println("$pos1 $pos2 $pos4 $pos5 ${s[pos1]}${s[pos2]}_${s[pos4]}${s[pos5]}")
+//                    val count = (pos4 - pos2 - 1).toLong().coerceAtLeast(0L) % mod
+//                    cnt = (cnt % mod + count % mod) % mod
+//                }
+//            }
+        }
+    }
+
+    return (cnt % mod).toInt()
+}
 
 fun main() {
 
     println(
-        maxSumDistinctTriplet(
-            intArrayOf(8, 20, 19, 19),
-            intArrayOf(8, 5, 15, 20)
-        )
+        countPalindromes("0000000")
     )
 }
