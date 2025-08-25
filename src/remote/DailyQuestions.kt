@@ -3911,10 +3911,124 @@ fun decodeCiphertext(encodedText: String, rows: Int): String {
     return result.toString().trimEnd()
 }
 
+fun canMakePaliQueries(s: String, queries: Array<IntArray>): List<Boolean> {
+    val n = s.length
+    val prefix = Array(26) { IntArray(n + 1) }
+
+    for (i in s.indices) {
+        for (c in 0 until 26) {
+            prefix[c][i + 1] = prefix[c][i]
+        }
+        prefix[s[i] - 'a'][i + 1]++
+    }
+
+    return List(queries.size) {
+        val (l, r, k) = queries[it]
+        var oddCount = 0
+        for (c in 0 until 26) {
+            val count = prefix[c][r + 1] - prefix[c][l]
+            if (count % 2 != 0) oddCount++
+        }
+        (oddCount / 2) <= k
+    }
+}
+
+fun maxValueOfCoins(piles: List<List<Int>>, k: Int): Int {
+    val n = piles.size
+    val prefix = Array(n) { mutableListOf<Int>(0) }
+    for (i in 0 until n) {
+        val weights = piles[i]
+        var sum = 0
+        for (weight in weights) {
+            sum += weight
+            prefix[i].add(sum)
+        }
+    }
+
+    val dp = IntArray(k + 1)
+
+    dp[1] = piles[0][0]
+    for (i in 1 until n) {
+        dp[1] = maxOf(dp[1], piles[i][0])
+    }
+
+    for (i in 0 until n) {
+        for (p in k downTo 2) {
+            for (j in 0..minOf(piles[i].size, p)) {
+                val candidate = prefix[i][j] + if (i == 0) 0 else dp[p - j]
+                dp[p] = maxOf(candidate, dp[p])
+            }
+        }
+    }
+    //  println(dp.print())
+    return dp[k]
+}
+
+fun waysToPartition(nums: IntArray, k: Int): Int {
+    val n = nums.size
+    val map = mutableMapOf<Long, MutableList<Int>>()
+    val totalSum = nums.sumOf { it.toLong() }
+    var pivotCount = 0
+    var leftSum = nums[0].toLong()
+    for (pivot in 1 until n) {
+        val diff = 2L * leftSum - totalSum
+        leftSum += nums[pivot].toLong()
+
+        if (diff == 0L) pivotCount++
+
+        if (map[diff] == null) {
+            map[diff] = mutableListOf(pivot)
+        } else {
+            map[diff]?.add(pivot)
+        }
+    }
+
+    // When updated nums[i] to k
+    // All diffs in [0,i] will be decreased to delta = k - nums[i]
+    // All diffs in [i+1, n-1] will be increased to delta = k - nums[i]
+    for (i in 0 until n) {
+        val delta = k.toLong() - nums[i].toLong()
+        var indexes = map[delta] ?: emptyList<Int>()
+        // count delta in [0, i] -> pivot <= i
+        var l = 0
+        var r = indexes.size - 1
+        var cloestIndexInLeft = -1
+        while (l <= r) {
+            val mid = (l + r) / 2
+            if (indexes[mid] <= i) {
+                cloestIndexInLeft = mid
+                l = mid + 1
+            } else {
+                r = mid - 1
+            }
+        }
+
+        // count -delta in [i+1, n-1] -> pivot >= i + 1
+        indexes = map[-delta] ?: emptyList()
+        l = 0
+        r = indexes.size - 1
+        var cloestIndexInRight = -1
+        while (l <= r) {
+            val mid = (l + r) / 2
+            if (indexes[mid] >= i + 1) {
+                cloestIndexInRight = mid
+                r = mid - 1
+            } else {
+                l = mid + 1
+            }
+        }
+        val leftCount = if (cloestIndexInLeft < 0) 0 else cloestIndexInLeft + 1
+        val rightCount = if (cloestIndexInRight < 0) 0 else indexes.size - cloestIndexInRight
+        val count = leftCount + rightCount
+        pivotCount = maxOf(count, pivotCount)
+    }
+
+    return pivotCount
+}
+
 fun main() {
 
     println(
-//        decodeCiphertext("iveo    eed   l te   olc", 4)
-        decodeCiphertext(" b  ac", 2)
+        waysToPartition(intArrayOf(22, 4, -25, -20, -15, 15, -16, 7, 19, -10, 0, -13, -14), -33)
     )
 }
