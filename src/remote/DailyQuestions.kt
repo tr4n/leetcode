@@ -1,6 +1,5 @@
 package remote
 
-import local.to2DIntArray
 import java.util.*
 import kotlin.math.*
 import kotlin.random.Random
@@ -3852,7 +3851,7 @@ fun vowelStrings(words: Array<String>, queries: Array<IntArray>): IntArray {
 fun searchMatrix(matrix: Array<IntArray>, target: Int): Boolean {
     val m = matrix.size
     val n = matrix[0].size
-  //  println(matrix.print())
+    //  println(matrix.print())
 
     var lo = 0
     var hi = m - 1
@@ -3870,7 +3869,7 @@ fun searchMatrix(matrix: Array<IntArray>, target: Int): Boolean {
     }
     row++
     while (row < m) {
-    //    println(row)
+        //    println(row)
         var l = 0
         var r = n - 1
         while (l <= r) {
@@ -3889,13 +3888,33 @@ fun searchMatrix(matrix: Array<IntArray>, target: Int): Boolean {
     return false
 }
 
+fun decodeCiphertext(encodedText: String, rows: Int): String {
+    if (rows == 1) return encodedText
+    val length = encodedText.length
+    var id = 0
+    var i = 0
+    var dia = 0
+    val result = StringBuilder()
+    val cols = length / rows
+    while (id < length) {
+        //  println("${id / cols} ${id % cols} $id ${encodedText[id]}")
+        result.append(encodedText[id])
+        if (i == rows - 1) {
+            i = 0
+            dia++
+        } else {
+            i++
+        }
+        val j = i + dia
+        id = i * cols + j
+    }
+    return result.toString().trimEnd()
+}
+
 fun main() {
 
     println(
-        searchMatrix(
-            "[[1,4,7,11,15],[2,5,8,12,19],[3,6,9,16,22],[10,13,14,17,24],[18,21,23,26,30]]".to2DIntArray(),
-            5
-
-        )
+//        decodeCiphertext("iveo    eed   l te   olc", 4)
+        decodeCiphertext(" b  ac", 2)
     )
 }
