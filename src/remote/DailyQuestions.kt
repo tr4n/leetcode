@@ -1,5 +1,6 @@
 package remote
 
+import local.to2DIntArray
 import java.util.*
 import kotlin.math.*
 import kotlin.random.Random
@@ -3679,7 +3680,7 @@ fun countPalindromes(s: String): Int {
             val secondIndexes = indexes[secondNum]
             val maxPos4 = secondIndexes.last()
 
-            for (i1 in 0 until firstIndexes.size -1 ) {
+            for (i1 in 0 until firstIndexes.size - 1) {
                 val pos1 = firstIndexes[i1]
                 val pos2AvailableList = secondIndexes.filter { it in (pos1 + 1)..<maxPos4 }
                 println("Pos2: $pos2AvailableList")
@@ -3692,12 +3693,12 @@ fun countPalindromes(s: String): Int {
                     for (i4 in (i2 + 1) until secondIndexes.size) {
                         val pos4 = secondIndexes[i4]
                         if (pos4 !in (pos2 + 1)..maxPos4) continue
-                        println("Pos3 ${(pos2 + 1)..(pos4 -1)}")
+                        println("Pos3 ${(pos2 + 1)..(pos4 - 1)}")
                         val pos3Count = (pos4 - pos2 - 1).toLong().coerceAtLeast(0L)
                         val (pos5Start, pos5End) =
                             findFirstAndLastInRange(firstIndexes, pos4, maxPos5 + 1) ?: continue
                         val pos5Count = (pos5End - pos5Start + 1).toLong().coerceAtLeast(0L)
-                      //  println("$pos1 $pos2 $pos4 $pos3Count $pos5Count ${s[pos1]}${s[pos2]}_${s[pos4]}${s[pos5Start]}")
+                        //  println("$pos1 $pos2 $pos4 $pos3Count $pos5Count ${s[pos1]}${s[pos2]}_${s[pos4]}${s[pos5Start]}")
                         val count = (pos3Count * pos5Count) % mod
                         cnt = (cnt % mod + count % mod) % mod
                     }
@@ -3721,9 +3722,180 @@ fun countPalindromes(s: String): Int {
     return (cnt % mod).toInt()
 }
 
+fun getMaximumXor(nums: IntArray, maximumBit: Int): IntArray {
+    val n = nums.size
+    val limit = 1 shl maximumBit
+    val xorNums = IntArray(n)
+    xorNums[0] = nums[0]
+    for (i in 1 until n) xorNums[i] = xorNums[i - 1] xor nums[i]
+
+    fun findK(base: Int, limit: Int): Int {
+        var k = 0
+        for (bit in (maximumBit - 1) downTo 0) {
+            val mask = 1 shl bit
+            val targetBit = if (base and mask == 0) 1 else 0
+            val candidate = k or (targetBit shl bit)
+
+            if (candidate < limit) {
+                k = candidate
+            }
+        }
+        return k
+    }
+
+    val answers = IntArray(n)
+    for (i in 0 until n) {
+        val base = xorNums[n - i - 1]
+        answers[i] = findK(base, limit)
+    }
+    return answers
+}
+
+fun largestMagicSquare(grid: Array<IntArray>): Int {
+    val m = grid.size
+    val n = grid[0].size
+    val prefix = PrefixSum2DLong(grid)
+
+    fun isMagicSquare(r2: Int, c2: Int, k: Int): Boolean {
+        val r1 = r2 - k + 1
+        val c1 = c2 - k + 1
+
+        if (r1 < 0 || c1 < 0) return false
+
+        val target = prefix.query(r1, c1, r1, c2)
+        for (i in r1..r2) {
+            if (prefix.query(i, c1, i, c2) != target) return false
+        }
+        for (j in c1..c2) {
+            if (prefix.query(r1, j, r2, j) != target) return false
+        }
+        if (prefix.mainDiagonal(r1, c1, r2, c2) != target) return false
+        if (prefix.antiDiagonal(r1, c2, r2, c1) != target) return false
+
+        return true
+    }
+
+    //  println(grid.print())
+    var maxSize = 1
+    for (row in 0 until m) {
+        for (col in 0 until n) {
+            for (size in 1 + minOf(row, col) downTo 2) {
+                if (size <= maxSize) break
+                val isMagic = isMagicSquare(row, col, size)
+                //  println("$row $col $size $isMagic")
+                if (isMagic) {
+                    maxSize = maxOf(maxSize, size)
+                }
+            }
+        }
+    }
+    return maxSize
+}
+
+fun numMagicSquaresInside(grid: Array<IntArray>): Int {
+    val m = grid.size
+    val n = grid[0].size
+    val prefix = PrefixSum2DLong(grid)
+
+    fun isMagicSquare(r2: Int, c2: Int, k: Int): Boolean {
+        val r1 = r2 - k + 1
+        val c1 = c2 - k + 1
+
+        if (r1 < 0 || c1 < 0) return false
+
+        val target = prefix.query(r1, c1, r1, c2)
+        if (target != 15L) return false
+        for (i in r1..r2) {
+            if (prefix.query(i, c1, i, c2) != target) return false
+        }
+        for (j in c1..c2) {
+            if (prefix.query(r1, j, r2, j) != target) return false
+        }
+        if (prefix.mainDiagonal(r1, c1, r2, c2) != target) return false
+        if (prefix.antiDiagonal(r1, c2, r2, c1) != target) return false
+        var x = 1 xor 2 xor 3 xor 4 xor 5 xor 6 xor 7 xor 8 xor 9
+        for (i in r1..r2) {
+            for (j in c1..c2) {
+                x = x xor grid[i][j]
+            }
+        }
+
+        return x == 0
+    }
+
+    //  println(grid.print())
+    var cnt = 0
+    for (row in 0 until m) {
+        for (col in 0 until n) {
+            val isMagic = isMagicSquare(row, col, 3)
+            if (isMagic) cnt++
+        }
+    }
+    return cnt
+}
+
+fun vowelStrings(words: Array<String>, queries: Array<IntArray>): IntArray {
+    val vowels = setOf('u', 'e', 'o', 'a', 'i')
+    val n = words.size
+    val prefix = IntArray(n + 1)
+    for (i in 0 until n) {
+        val word = words[i]
+        val value = if (word[0] in vowels && word.last() in vowels) 1 else 0
+        prefix[i + 1] = prefix[i] + value
+    }
+    return IntArray(queries.size) {
+        val (l, r) = queries[it]
+        prefix[r + 1] - prefix[l]
+    }
+}
+
+fun searchMatrix(matrix: Array<IntArray>, target: Int): Boolean {
+    val m = matrix.size
+    val n = matrix[0].size
+  //  println(matrix.print())
+
+    var lo = 0
+    var hi = m - 1
+    var row = -1
+    while (lo <= hi) {
+        val mid = (lo + hi) / 2
+        val value = matrix[mid][n - 1]
+        if (value == target) return true
+        if (value < target) {
+            row = mid
+            lo = mid + 1
+        } else {
+            hi = mid - 1
+        }
+    }
+    row++
+    while (row < m) {
+    //    println(row)
+        var l = 0
+        var r = n - 1
+        while (l <= r) {
+            val mid = (l + r) / 2
+            val value = matrix[row][mid]
+            if (value == target) return true
+            if (value < target) {
+                l = mid + 1
+            } else {
+                r = mid - 1
+            }
+        }
+        row++
+    }
+
+    return false
+}
+
 fun main() {
 
     println(
-        countPalindromes("0000000")
+        searchMatrix(
+            "[[1,4,7,11,15],[2,5,8,12,19],[3,6,9,16,22],[10,13,14,17,24],[18,21,23,26,30]]".to2DIntArray(),
+            5
+
+        )
     )
 }

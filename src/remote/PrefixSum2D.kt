@@ -2,6 +2,7 @@ package remote
 
 import local.to2DIntArray
 import java.util.*
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
@@ -10,6 +11,8 @@ class PrefixSum2D(private val matrix: Array<IntArray>) {
     private val m = matrix.size
     private val n = matrix[0].size
     private val prefix = Array(m) { IntArray(n) }
+    private val diag1 = Array(m) { IntArray(n) } // ↘
+    private val diag2 = Array(m) { IntArray(n) } // ↙
 
     init {
         buildPrefixSum()
@@ -22,6 +25,8 @@ class PrefixSum2D(private val matrix: Array<IntArray>) {
                 val left = if (j > 0) prefix[i][j - 1] else 0
                 val corner = if (i > 0 && j > 0) prefix[i - 1][j - 1] else 0
                 prefix[i][j] = matrix[i][j] + top + left - corner
+                diag1[i][j] = matrix[i][j] + if (i > 0 && j > 0) diag1[i - 1][j - 1] else 0
+                diag2[i][j] = matrix[i][j] + if (i > 0 && j < n - 1) diag2[i - 1][j + 1] else 0
             }
         }
     }
@@ -32,6 +37,22 @@ class PrefixSum2D(private val matrix: Array<IntArray>) {
         val left = if (c1 > 0) prefix[r2][c1 - 1] else 0
         val corner = if (r1 > 0 && c1 > 0) prefix[r1 - 1][c1 - 1] else 0
         return total - top - left + corner
+    }
+
+    // (↘)
+    fun mainDiagonal(r1: Int, c1: Int, r2: Int, c2: Int): Int {
+        // r2 - r1 == c2 - c1
+        val total = diag1[r2][c2]
+        val exclude = if (r1 > 0 && c1 > 0) diag1[r1 - 1][c1 - 1] else 0
+        return total - exclude
+    }
+
+    //  (↙)
+    fun antiDiagonal(r1: Int, c2: Int, r2: Int, c1: Int): Int {
+        // r2 - r1 == c1 - c2
+        val total = diag2[r2][c1]
+        val exclude = if (r1 > 0 && c2 < n - 1) diag2[r1 - 1][c2 + 1] else 0
+        return total - exclude
     }
 }
 
@@ -75,6 +96,8 @@ class PrefixSum2DLong(private val matrix: Array<IntArray>) {
     private val m = matrix.size
     private val n = matrix[0].size
     private val prefix = Array(m) { LongArray(n) }
+    private val diag1 = Array(m) { LongArray(n) } // ↘
+    private val diag2 = Array(m) { LongArray(n) } // ↙
 
     init {
         buildPrefixSum()
@@ -87,6 +110,9 @@ class PrefixSum2DLong(private val matrix: Array<IntArray>) {
                 val left = if (j > 0) prefix[i][j - 1] else 0
                 val corner = if (i > 0 && j > 0) prefix[i - 1][j - 1] else 0
                 prefix[i][j] = matrix[i][j].toLong() + top + left - corner
+                diag1[i][j] = matrix[i][j].toLong() + if (i > 0 && j > 0) diag1[i - 1][j - 1] else 0
+
+                diag2[i][j] = matrix[i][j].toLong() + if (i > 0 && j < n - 1) diag2[i - 1][j + 1] else 0
             }
         }
     }
@@ -97,6 +123,22 @@ class PrefixSum2DLong(private val matrix: Array<IntArray>) {
         val left = if (c1 > 0) prefix[r2][c1 - 1] else 0
         val corner = if (r1 > 0 && c1 > 0) prefix[r1 - 1][c1 - 1] else 0
         return total - top - left + corner
+    }
+
+    // (↘)
+    fun mainDiagonal(r1: Int, c1: Int, r2: Int, c2: Int): Long {
+        // r2 - r1 == c2 - c1
+        val total = diag1[r2][c2]
+        val exclude = if (r1 > 0 && c1 > 0) diag1[r1 - 1][c1 - 1] else 0
+        return total - exclude
+    }
+
+    //  (↙)
+    fun antiDiagonal(r1: Int, c2: Int, r2: Int, c1: Int): Long {
+        // r2 - r1 == c1 - c2
+        val total = diag2[r2][c1]
+        val exclude = if (r1 > 0 && c2 < n - 1) diag2[r1 - 1][c2 + 1] else 0
+        return total - exclude
     }
 }
 
@@ -456,10 +498,124 @@ fun minimumSum(grid: Array<IntArray>): Int {
     return if (minTotalArea == Int.MAX_VALUE) 0 else minTotalArea
 }
 
+fun maxSum(grid: Array<IntArray>): Int {
+    val m = grid.size
+    val n = grid[0].size
+    val prefix = PrefixSum2D(grid)
+    var maxSum = Int.MIN_VALUE
+    for (i in 2 until m) {
+        for (j in 2 until n) {
+            val rectSum = prefix.query(i - 2, j - 2, i, j)
+            val rest = grid[i - 1][j] + grid[i - 1][j - 2]
+            val sum = rectSum - rest
+            maxSum = maxOf(maxSum, sum)
+        }
+    }
+    return maxSum
+}
+
+fun canPartitionGrid(grid: Array<IntArray>): Boolean {
+    val m = grid.size
+    val n = grid[0].size
+    val prefix = PrefixSum2DLong(grid)
+
+    val map = mutableMapOf<Int, IntArray>()
+
+    for (i in 0 until m) {
+        for (j in 0 until n) {
+            val num = grid[i][j]
+            val entry = map[num]
+            if (entry == null) {
+                map[num] = intArrayOf(i, i, j, j)
+            } else {
+                entry[0] = minOf(entry[0], i)
+                entry[1] = maxOf(entry[1], i)
+                entry[2] = minOf(entry[2], j)
+                entry[3] = maxOf(entry[3], j)
+                map[num] = entry
+            }
+        }
+    }
+    println(grid.print())
+    val total = prefix.query(0, 0, m - 1, n - 1)
+    for (i in 0 until m - 1) {
+        val top = prefix.query(0, 0, i, n - 1)
+        val bottom = total - top
+        if (top == bottom) return true
+        val delta = abs(top - bottom).toInt()
+        val (minX, maxX) = map[delta] ?: continue
+        if ((top > bottom && maxX <= i) || (top < bottom) && minX > i) {
+            println("row $i $top-$bottom $maxX $minX")
+            return true
+        }
+    }
+
+    for (j in 0 until n - 1) {
+        val left = prefix.query(0, 0, m - 1, j)
+        val right = total - left
+        if (left == right) return true
+        val delta = abs(left - right).toInt()
+        val (_, _, minY, maxY) = map[delta] ?: continue
+        if ((left > right && maxY <= j) || (left < right) && minY > j) {
+            println("col $j $left $right $maxY $minY")
+            return true
+        }
+    }
+
+    return false
+}
+
+fun minXor(nums: IntArray, k: Int): Int {
+    val n = nums.size
+    val x = LongArray(n)
+    x[0] = nums[0].toLong()
+    for (i in 1 until n) x[i] = x[i - 1] xor nums[i].toLong()
+
+    val dp = Array(k) { LongArray(n) }
+    for (j in 0 until n) {
+        dp[0][j] = x[j]
+    }
+
+    for (p in 1 until k) {
+        for (i in p until n) {
+            var minXor = Long.MAX_VALUE
+            for (j in (p - 1) until i) {
+                val lastPartXor = x[i] xor x[j]
+                val value = maxOf(lastPartXor, dp[p - 1][j])
+                minXor = minOf(minXor, value)
+            }
+            dp[p][i] = minXor
+        }
+    }
+    return dp[k - 1][n - 1].toInt()
+}
+
+fun findDiagonalOrder(mat: Array<IntArray>): IntArray {
+    val m = mat.size
+    val n = mat[0].size
+
+    val result = IntArray(m * n)
+    var id = 0
+    for (dia in 0..(m + n - 2)) {
+        val minX = (dia + 1 - n).coerceAtLeast(0)
+        val maxX = dia.coerceAtMost(m - 1)
+        val range = if(dia % 2 != 0) {
+            minX..maxX
+        } else {
+            maxX downTo minX
+        }
+         for (i in range) {
+            val j = dia - i
+          //  println("$i $j ${mat[i][j]}")
+            result[id++] = mat[i][j]
+        }
+    }
+
+    return result
+}
+
 fun main() {
     println(
-        minimumSum(
-            "[[1,0,1],[1,1,1]]".to2DIntArray()
-        )
+        findDiagonalOrder("[[1,2,3],[4,5,6],[7,8,9]]".to2DIntArray()).toList()
     )
 }
