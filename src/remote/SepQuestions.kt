@@ -99,19 +99,26 @@ fun fullBloomFlowers(flowers: Array<IntArray>, people: IntArray): IntArray {
 
 fun minInterval(intervals: Array<IntArray>, queries: IntArray): IntArray {
     val queryList = queries.withIndex().sortedBy { it.value }
-  //  intervals.sortWith(comparator = compareBy<IntArray> { it[1] }.thenByDescending { it[0] })
-    val minQuery = queryList.first().value
-    val maxQuery = queryList.last().value
+    //  intervals.sortWith(comparator = compareBy<IntArray> { it[1] }.thenByDescending { it[0] })
+    val minQuery = queries.min()
+    val maxQuery = queries.max()
     val intervalList = intervals.filter {
         it[0] <= maxQuery && it[1] >= minQuery
-    }.sortedWith(compareBy({ it[1] }, { -it[0] }))
+    }.sortedWith(compareBy({ it[0] }))
+
+    val pq = PriorityQueue<Pair<Int, Int>>(compareBy { it.first })
+    for ((start, end) in intervals) {
+        if (start > maxQuery || end < minQuery) continue
+        pq.add(start to end)
+    }
 
     val answers = IntArray(queries.size) { -1 }
     var i = 0
     for (query in queryList) {
 
-        while (i < intervalList.size) {
-            val (start, end) = intervalList[i]
+        while (pq.isNotEmpty()) {
+            val (start, end) = pq.poll()
+
             if (query.value in start..end) {
                 answers[query.index] = end - start + 1
                 break
