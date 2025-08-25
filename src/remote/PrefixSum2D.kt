@@ -498,6 +498,33 @@ fun minimumSum(grid: Array<IntArray>): Int {
     return if (minTotalArea == Int.MAX_VALUE) 0 else minTotalArea
 }
 
+fun countSubmatrices(grid: Array<IntArray>, k: Int): Int {
+    val m = grid.size
+    val n = grid[0].size
+    val prefix = PrefixSum2D(grid)
+
+    var cnt = 0
+    for (i in 0 until m) {
+        var l = 0
+        var r = n - 1
+        var ans = -1
+        while (l <= r) {
+            val mid = (l + r) / 2
+            val sum = prefix.query(0, 0, i, mid)
+            if (sum <= k) {
+                ans = mid
+                l = mid + 1
+            } else {
+                r = mid - 1
+            }
+        }
+        if (ans >= 0) {
+            cnt += (ans + 1)
+        }
+    }
+    return cnt
+}
+
 fun maxSum(grid: Array<IntArray>): Int {
     val m = grid.size
     val n = grid[0].size

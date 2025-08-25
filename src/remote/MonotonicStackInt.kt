@@ -687,7 +687,7 @@ fun getCollisionTimes(cars: Array<IntArray>): DoubleArray {
         var collideTime = 0.0
         var estimatedTime = 1.0
 
-        while (right <  n && estimatedTime >= collideTime) {
+        while (right < n && estimatedTime >= collideTime) {
             val (nextPos, nextSpeed) = cars[right]
             collideTime = answers[right]
             estimatedTime = (nextPos - pos).toDouble() / (speed - nextSpeed).toDouble()
@@ -698,6 +698,35 @@ fun getCollisionTimes(cars: Array<IntArray>): DoubleArray {
     }
     return answers
 }
+
+fun longestSubarray(nums: IntArray): Int {
+    val n = nums.size
+    var maxLength = 0
+    var oneCount = 0
+    val oneRight = IntArray(n)
+    for (i in (n - 1) downTo 0) {
+        oneRight[i] = oneCount
+        if (nums[i] == 0) {
+            oneCount = 0
+        } else {
+            oneCount++
+        }
+    }
+
+    oneCount = 0
+    for (i in 0 until n) {
+        val length = oneCount + oneRight[i]
+        maxLength = maxOf(maxLength, length)
+        if (nums[i] == 0) {
+            oneCount = 0
+        } else {
+            oneCount++
+        }
+    }
+    return maxLength
+}
+
+
 
 fun main() {
     println(

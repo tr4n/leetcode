@@ -1,9 +1,9 @@
 package local
 
+import remote.MinMaxSparseTable
 import java.util.PriorityQueue
 import java.util.TreeMap
 import kotlin.collections.ArrayDeque
-import kotlin.collections.iterator
 import kotlin.collections.sort
 import kotlin.math.*
 
@@ -992,10 +992,155 @@ fun new21Game(n: Int, k: Int, maxPts: Int): Double {
     return sums[n] - sums[k - 1]
 }
 
+fun countPartitions1(nums: IntArray, k: Int): Int {
+    val mod = 1_000_000_007L
+    val n = nums.size
+    val table = MinMaxSparseTable(nums)
+    val d = MutableList(n) { 0L }
+    for (i in 0 until n) {
+        val (min, max) = table.query(0, i)
+        if (abs(min - max) <= k) {
+            d[i] = 1L
+        }
+    }
+    //  println(nums.toList())
+    val tree = SumLongSegmentTree(d)
+    fun firstAndLastLE(
+        start: Int,
+        end: Int,
+        isAscending: Boolean,
+        getValue: (Int) -> Int
+    ): Pair<Int, Int> {
+        if (start > end) return -1 to -1
+
+        if (isAscending) {
+            var l = start
+            var r = end
+            var pos = -1
+            while (l <= r) {
+                val mid = (l + r) / 2
+                if (getValue(mid) <= k) {
+                    pos = mid
+                    l = mid + 1
+                } else {
+                    r = mid - 1
+                }
+            }
+            return if (pos != -1) (start to pos) else (-1 to -1)
+
+        } else {
+            var l = start
+            var r = end
+            var pos = -1
+            while (l <= r) {
+                val mid = (l + r) / 2
+                if (getValue(mid) <= k) {
+                    pos = mid
+                    r = mid - 1
+                } else {
+                    l = mid + 1
+                }
+            }
+            return if (pos != -1) (pos to end) else (-1 to -1)
+        }
+    }
+
+    for (i in 1 until n) {
+        val (start, end) = firstAndLastLE(0, i - 1, false) { mid ->
+            val (min, max) = table.query(mid + 1, i)
+            max - min
+        }
+
+        if (start < 0 || end < 0 || start > end) continue
+        d[i] = (d[i] + tree.sumRange(start, end) % mod) % mod
+        tree.update(i, d[i])
+    }
+    //  println(d.toList())
+    return (d[n - 1] % mod).toInt()
+}
+
+fun countPartitions(nums: IntArray, k: Int): Int {
+    val mod = 1_000_000_007
+    val n = nums.size
+    val totalSum = nums.sumOf { it.toLong() }
+    if (2L * k > totalSum) return 0
+
+    var totalWays = 1L
+    var b = 2L
+    var e = n.toLong()
+    while (e > 0) {
+        if ((e and 1L) == 1L) {
+            totalWays = (totalWays * b) % mod
+        }
+        b = (b * b) % mod
+        e = e shr 1
+    }
+    totalWays = (totalWays - 2L + mod) % mod
+
+    val dp = LongArray(k + 1)
+    dp[0] = 1L
+    for (num in nums) {
+        for (j in k - 1 downTo num) {
+            dp[j] = (dp[j] + dp[j - num]) % mod
+        }
+    }
+
+    var lessK = 0L
+    for (j in 1 until k) {
+        lessK = (lessK + dp[j]) % mod
+    }
+
+    // 2^n-2 - 2x
+    val reversedWays = (2 * lessK) % mod
+    val result = (totalWays - reversedWays) % mod
+
+    println("$totalWays $lessK")
+    return if (result < 0L) (result + mod).toInt() else result.toInt()
+}
+
+fun distance(nums: IntArray): LongArray {
+    val n = nums.size
+    val map = mutableMapOf<Int, MutableList<Int>>()
+
+    for (i in 0 until n) {
+        val num = nums[i]
+        if (map[num] == null) {
+            map[num] = mutableListOf(i)
+            continue
+        }
+
+        map[num]?.add(i)
+    }
+
+    val answers = LongArray(n)
+    for (indexes in map.values) {
+        if (indexes.size == 1) {
+            answers[indexes.first()] = 0
+            continue
+        }
+        val totalSum = indexes.sumOf { it.toLong() }
+        var leftSum = 0L
+        //  println("# $indexes")
+        for (leftCount in 0 until indexes.size) {
+            val index = indexes[leftCount].toLong()
+            val leftDiff = index * leftCount - leftSum
+
+            val rightSum = totalSum - leftSum - index
+            val rightCount = indexes.size.toLong() - leftCount - 1L
+            val rightDiff = rightSum - index * rightCount
+
+            val ans = leftDiff + rightDiff
+            // println("$index left: $leftDiff right: $rightDiff")
+            leftSum += index
+            answers[index.toInt()] = ans
+        }
+    }
+    return answers
+}
+
 fun main() {
-    // val matrix = "[[1,5,9],[10,11,13],[12,13,15]]".home.to2DIntArray()
     val flights = "[[0,1,2],[1,2,1],[2,0,10]]".to2DIntArray()
     println(
-        new21Game(21, 17, 10)
+        distance(intArrayOf(1, 3, 1, 1, 2)).toList()
     )
 }
