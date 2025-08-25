@@ -5,7 +5,8 @@ import kotlin.math.*
 
 fun IntArray.print() = toList().toString()
 
-fun Array<IntArray>.print() = joinToString("\n") { it.print() }
+fun Array<IntArray>.print() = joinToString("\n") { it.toList().toString() }
+fun Array<LongArray>.print() = joinToString("\n") { it.toList().toString() }
 
 fun parseStringToIntArray2D(input: String): Array<IntArray> {
     return input
