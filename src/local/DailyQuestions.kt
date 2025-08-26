@@ -1138,6 +1138,24 @@ fun distance(nums: IntArray): LongArray {
     return answers
 }
 
+
+fun getSumAbsoluteDifferences(nums: IntArray): IntArray {
+    val n = nums.size
+    val totalSum = nums.sum()
+    var leftSum = 0
+    //  println("# $indexes")
+    return IntArray(n) { leftCount ->
+        val index = nums[leftCount]
+        val leftDiff = index * leftCount - leftSum
+
+        val rightSum = totalSum - leftSum - index
+        val rightCount = nums.size - leftCount - 1
+        val rightDiff = rightSum - index * rightCount
+        leftSum += index
+        leftDiff + rightDiff
+    }
+}
+
 fun main() {
     val flights = "[[0,1,2],[1,2,1],[2,0,10]]".to2DIntArray()
     println(
