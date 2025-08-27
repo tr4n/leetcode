@@ -727,7 +727,7 @@ fun longestPalindromeSubseq(s: String): Int {
     return dp[m][n]
 }
 
-fun wordBreak(s: String, wordDict: List<String>): Boolean {
+fun wordBreak1(s: String, wordDict: List<String>): Boolean {
     if (s.isEmpty() && wordDict.isEmpty()) return true
     if (s.isEmpty() || wordDict.isEmpty()) return false
     val n = s.length

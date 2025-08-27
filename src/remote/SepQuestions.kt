@@ -128,11 +128,61 @@ fun minInterval(intervals: Array<IntArray>, queries: IntArray): IntArray {
     return answers
 }
 
+fun lenOfVDiagonal(grid: Array<IntArray>): Int {
+    val m = grid.size
+    val n = grid[0].size
+    val dr = intArrayOf(-1, -1, 1, 1)
+    val dc = intArrayOf(-1, 1, -1, 1)
+    val nextClockwise = intArrayOf(1, 3, 0, 2)
+
+    val dp = Array(m) { Array(n) { Array(4) { IntArray(2) { -1 } } } }
+    var maxLength = 0
+
+    fun dfs(row: Int, col: Int, dir: Int, turned: Int): Int {
+        if (dp[row][col][dir][turned] != -1) return dp[row][col][dir][turned]
+
+        val current = grid[row][col]
+        val nextNum = if (current < 2) 2 else 0
+
+        var res = 1
+
+        var nr = row + dr[dir]
+        var nc = col + dc[dir]
+        if (nr in 0 until m && nc in 0 until n && grid[nr][nc] == nextNum) {
+            res = maxOf(res, 1 + dfs(nr, nc, dir, turned))
+        }
+
+        if (turned == 0) {
+            val rotateDir = nextClockwise[dir]
+            nr = row + dr[rotateDir]
+            nc = col + dc[rotateDir]
+            if (nr in 0 until m && nc in 0 until n && grid[nr][nc] == nextNum) {
+                res = maxOf(res, 1 + dfs(nr, nc, rotateDir, 1))
+            }
+        }
+
+        dp[row][col][dir][turned] = res
+        return res
+    }
+
+    for (i in 0 until m) {
+        for (j in 0 until n) {
+            if (grid[i][j] == 1) {
+                for (dir in 0 until 4) {
+                    maxLength = maxOf(maxLength, dfs(i, j, dir, 0))
+                }
+            }
+        }
+    }
+
+    return maxLength
+}
+
+
 fun main() {
     println(
-        minInterval(
-            "[[1,4],[2,4],[3,6],[4,4]]".to2DIntArray(),
-            intArrayOf(2, 3, 4, 5)
-        ).toList()
+        lenOfVDiagonal(
+            "[[2,2,2,2,2],[2,0,2,2,0],[2,0,1,1,0],[1,0,2,2,2],[2,0,0,2,2]]".to2DIntArray(),
+        )
     )
 }
