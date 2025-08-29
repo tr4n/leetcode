@@ -47,7 +47,48 @@ class MergeSortTreeInteger(private val arr: IntArray) {
         val right = query(node * 2 + 1, mid + 1, r, ql, qr)
         return merge(left, right)
     }
+
+    fun count(ql: Int, qr: Int, onCount: (List<Int>) -> Long): Long {
+        return queryCount(1, 0, n - 1, ql, qr, onCount)
+    }
+
+    private fun queryCount(node: Int, l: Int, r: Int, ql: Int, qr: Int, onCount: (List<Int>) -> Long): Long {
+        if (qr < l || r < ql) return 0
+        if (ql <= l && r <= qr) return onCount(tree[node])
+        val mid = (l + r) / 2
+        val left = queryCount(node * 2, l, mid, ql, qr, onCount)
+        val right = queryCount(node * 2 + 1, mid + 1, r, ql, qr, onCount)
+        return left + right
+    }
+
+    fun update(idx: Int, newValue: Int) {
+        update(1, 0, n - 1, idx, newValue)
+    }
+
+    private fun update(node: Int, l: Int, r: Int, idx: Int, newValue: Int) {
+        val oldValue = arr[idx]
+        val list = tree[node]
+
+        val pos = list.binarySearch(oldValue)
+        if (pos >= 0) list.removeAt(pos)
+
+        val insertPos = list.binarySearch(newValue).let { if (it < 0) -(it + 1) else it }
+        list.add(insertPos, newValue)
+
+        if (l == r) {
+            arr[idx] = newValue
+            return
+        }
+
+        val mid = (l + r) / 2
+        if (idx <= mid) {
+            update(node * 2, l, mid, idx, newValue)
+        } else {
+            update(node * 2 + 1, mid + 1, r, idx, newValue)
+        }
+    }
 }
+
 
 class MergeSortTree<T : Comparable<T>>(private val arr: List<T>) {
     private val n = arr.size
@@ -141,12 +182,87 @@ fun numberOfPairs(nums1: IntArray, nums2: IntArray, diff: Int): Long {
     return cnt
 }
 
-fun main(){
+fun createSortedArray(instructions: IntArray): Int {
+    fun countLessThan(list: List<Int>, x: Int): Int {
+        var l = 0
+        var r = list.size
+        while (l < r) {
+            val mid = (l + r) / 2
+            if (list[mid] < x) l = mid + 1 else r = mid
+        }
+        return l
+    }
+
+    fun countGreaterThan(list: List<Int>, x: Int): Int {
+        var l = 0
+        var r = list.size
+        while (l < r) {
+            val mid = (l + r) / 2
+            if (list[mid] <= x) l = mid + 1 else r = mid
+        }
+        return list.size - l
+    }
+
+    val mod = 1_000_000_007
+    val tree = MergeSortTree(instructions.toList())
+    var totalCost = 0L
+
+    for (i in 1 until instructions.size) {
+        val num = instructions[i]
+        val lessCount = tree.count(0, i - 1) { list ->
+            countLessThan(list, num).toLong()
+        }
+        val greaterCount = tree.count(0, i - 1) { list ->
+            countGreaterThan(list, num).toLong()
+        }
+
+        val cost = minOf(lessCount, greaterCount)
+        totalCost = (totalCost + cost) % mod
+    }
+
+    return totalCost.toInt()
+}
+
+fun containsNearbyAlmostDuplicate(nums: IntArray, indexDiff: Int, valueDiff: Int): Boolean {
+    fun countLE(list: List<Int>, x: Int): Int {
+        var l = 0
+        var r = list.size
+        while (l < r) {
+            val mid = (l + r) / 2
+            if (list[mid] <= x) l = mid + 1 else r = mid
+        }
+        return l
+    }
+
+    fun countGE(list: List<Int>, x: Int): Int {
+        var l = 0
+        var r = list.size
+        while (l < r) {
+            val mid = (l + r) / 2
+            if (list[mid] < x) l = mid + 1 else r = mid
+        }
+        return list.size - l
+    }
+
+    val n = nums.size
+    val tree = MergeSortTreeInteger(nums)
+
+    for (i in 0 until n - indexDiff) {
+        val num = nums[i]
+        val start = maxOf(0, i - indexDiff)
+        val end = minOf(n - 1, i + indexDiff)
+        val countInRange = tree.count(start, end) { list ->
+            val le1 = countLE(list, num + valueDiff).toLong()
+            val le2 = countLE(list, num - valueDiff - 1).toLong()
+            le1 - le2
+        }
+        if (countInRange > 0L) return true
+    }
+    return false
+}
+
+fun main() {
     println(
-        numberOfPairs(
-            intArrayOf(3,2,5),
-            intArrayOf(2,2,1),
-            1
-        )
+        containsNearbyAlmostDuplicate(intArrayOf(1, 5, 9, 1, 5, 9), 2, 3)
     )
 }

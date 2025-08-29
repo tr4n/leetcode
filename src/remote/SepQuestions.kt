@@ -383,6 +383,44 @@ fun maxAbsValExpr(arr1: IntArray, arr2: IntArray): Int {
     return result
 }
 
+fun mergeKLists(lists: Array<ListNode?>): ListNode? {
+    val root = ListNode(0)
+    var result: ListNode? = root
+    while (true) {
+        var minVal = Int.MAX_VALUE
+        var minIndex = -1
+        for (i in lists.indices) {
+            val value = lists[i]?.`val` ?: continue
+            if (value < minVal) {
+                minIndex = i
+                minVal = value
+            }
+        }
+        if (minIndex < 0) break
+        val newNode = ListNode(minVal)
+        result?.next = newNode
+        result = result?.next
+        lists[minIndex] = lists[minIndex]?.next
+    }
+    result?.next = null
+    return root.next
+}
+
+fun frequencySort(s: String): String {
+    val char2Freq = mutableMapOf<Char, Int>()
+    for (c in s) {
+        val f = char2Freq[c] ?: 0
+        char2Freq[c] = f + 1
+    }
+    return char2Freq.toList()
+        .sortedByDescending { it.second }
+        .joinToString("") { (c, f) ->
+        val builder = StringBuilder()
+        for (i in 0 until f) builder.append(c)
+        builder.toString()
+    }
+}
+
 
 fun main() {
     println(
