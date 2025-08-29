@@ -140,3 +140,51 @@ fun exist(board: Array<CharArray>, word: String): Boolean {
     }
     return found
 }
+
+fun sumPrefixScores(words: Array<String>): IntArray {
+    class Node {
+        val children = mutableMapOf<Char, Node>()
+        var isWord = false
+        var count = 0
+    }
+
+    val wordList = words.withIndex()
+        .sortedWith(comparator = compareBy<IndexedValue<String>> { it.value.length }.thenBy { it.value })
+  //  println(wordList.toList())
+    val root = Node()
+    for (entry in wordList) {
+        val word = entry.value
+        var node = root
+        for (c in word) {
+            node = node.children.computeIfAbsent(c) { Node() }
+            node.count++
+        }
+        node.isWord = true
+    }
+
+    val answers = IntArray(words.size)
+    for (i in words.indices) {
+        val word = words[i]
+        var cnt = 0
+      //  println("word: $word")
+        var node = root
+        var minSoFar = Int.MAX_VALUE
+        for (c in word) {
+            node = node.children[c] ?: break
+            minSoFar = minOf(minSoFar, node.count)
+         //   print("${node.count} ")
+            cnt += minSoFar
+        }
+      //  println()
+        answers[i] = cnt
+    }
+
+    return answers
+
+}
+
+fun main() {
+    println(
+        sumPrefixScores(arrayOf("abc", "ab", "bc", "b")).toList()
+    )
+}

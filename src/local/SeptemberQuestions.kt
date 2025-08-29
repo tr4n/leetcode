@@ -60,7 +60,7 @@ fun minWastedSpace(packages: IntArray, boxes: Array<IntArray>): Int {
 
     val prefixFreq = LongArray(maxValue + 1)
     val prefixSum = LongArray(maxValue + 1)
-    for (i in minValue..maxValue){
+    for (i in minValue..maxValue) {
         prefixFreq[i] = prefixFreq[i - 1] + freq[i].toLong()
         prefixSum[i] = prefixSum[i - 1] + freq[i].toLong() * i
     }
@@ -69,10 +69,10 @@ fun minWastedSpace(packages: IntArray, boxes: Array<IntArray>): Int {
     val availableBoxes = boxes.filter { it.last() >= maxValue }
 
     var minWastedSpace = Long.MAX_VALUE
-    for(boxList in availableBoxes) {
+    for (boxList in availableBoxes) {
         var previousBox = 0
         var wasted = 0L
-        for(box in boxList) {
+        for (box in boxList) {
             val current = box.coerceAtMost(maxValue)
             val previous = previousBox.coerceAtMost(maxValue)
 
@@ -81,18 +81,30 @@ fun minWastedSpace(packages: IntArray, boxes: Array<IntArray>): Int {
             val totalSpace = count * box
             wasted += (totalSpace - packageSum)
             previousBox = box
-        //    println("$box $count $packageSum")
-            if(wasted >= minWastedSpace) break
+            //    println("$box $count $packageSum")
+            if (wasted >= minWastedSpace) break
         }
         minWastedSpace = minOf(minWastedSpace, wasted)
     }
-    return if(minWastedSpace == Long.MAX_VALUE) -1 else (minWastedSpace % mod).toInt()
+    return if (minWastedSpace == Long.MAX_VALUE) -1 else (minWastedSpace % mod).toInt()
+}
+
+fun findMedianSortedArrays(nums1: IntArray, nums2: IntArray): Double {
+    val m = nums1.size
+    val n = nums2.size
+    val half = (m + n) / 2
+
+    // m + n odd -> (m + n) /2
+    // m + n even -> (m + n) / 2 -1
+
+    // x - > y -> x + y =
+    return 0.0
 }
 
 fun main() {
     println(
         minWastedSpace(
-            intArrayOf(3,5,8,10,11,12),
+            intArrayOf(3, 5, 8, 10, 11, 12),
             "[[12],[11,9],[10,5,14]]".to2DIntArray()
         )
     )
