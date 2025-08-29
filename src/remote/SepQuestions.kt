@@ -1,6 +1,5 @@
 package remote
 
-import local.to2DIntArray
 import java.util.*
 
 fun findDuplicates(nums: IntArray): List<Int> {
@@ -178,11 +177,218 @@ fun lenOfVDiagonal(grid: Array<IntArray>): Int {
     return maxLength
 }
 
+fun sortMatrix(grid: Array<IntArray>): Array<IntArray> {
+    //  println(grid.print())
+    // println()
+    val m = grid.size
+    val n = grid[0].size
+    for (d in -(n - 1)..<m) {
+        val diagonal = mutableListOf<Int>()
+        for (i in 0 until m) {
+            val j = i - d
+            if (j in 0 until n) {
+                diagonal.add(grid[i][j])
+            }
+        }
+        if (d < 0) diagonal.sort() else diagonal.sortDescending()
+        var id = 0
+        for (i in 0 until m) {
+            val j = i - d
+            if (j in 0 until n) {
+                grid[i][j] = diagonal[id++]
+            }
+        }
+    }
+    return grid
+}
+
+fun diagonalSort(grid: Array<IntArray>): Array<IntArray> {
+    //  println(grid.print())
+    // println()
+    val m = grid.size
+    val n = grid[0].size
+    for (d in -(n - 1)..<m) {
+        val diagonal = mutableListOf<Int>()
+        for (i in 0 until m) {
+            val j = i - d
+            if (j in 0 until n) {
+                diagonal.add(grid[i][j])
+            }
+        }
+        diagonal.sort()
+        var id = 0
+        for (i in 0 until m) {
+            val j = i - d
+            if (j in 0 until n) {
+                grid[i][j] = diagonal[id++]
+            }
+        }
+    }
+    return grid
+}
+
+fun largestNumber(nums: IntArray): String {
+    return nums
+        .map { it.toString() }
+        .sortedWith { a, b ->
+            val ab = a + b
+            val ba = b + a
+            ba.compareTo(ab)
+        }
+        .joinToString("")
+        .trimStart('0').ifEmpty { "0" }
+
+}
+
+class SegmentTree2D(private val points: List<Pair<Int, Int>>) {
+    private val xs = points.map { it.first }.distinct().sorted()
+    private val tree = Array(4 * xs.size) { emptyList<Int>() }
+
+    init {
+        build(1, 0, xs.size - 1, points.sortedBy { it.first })
+    }
+
+    private fun build(node: Int, l: Int, r: Int, points: List<Pair<Int, Int>>) {
+        if (l == r) {
+            val x = xs[l]
+            tree[node] = points.filter { it.first == x }.map { it.second }.sorted()
+            return
+        }
+        val mid = (l + r) / 2
+        build(node * 2, l, mid, points)
+        build(node * 2 + 1, mid + 1, r, points)
+        tree[node] = merge(tree[node * 2], tree[node * 2 + 1])
+    }
+
+    private fun merge(a: List<Int>, b: List<Int>): List<Int> {
+        val merged = mutableListOf<Int>()
+        var i = 0
+        var j = 0
+        while (i < a.size && j < b.size) {
+            if (a[i] <= b[j]) merged.add(a[i++]) else merged.add(b[j++])
+        }
+        while (i < a.size) merged.add(a[i++])
+        while (j < b.size) merged.add(b[j++])
+        return merged
+    }
+
+    fun countInRectangle(x1: Int, x2: Int, y1: Int, y2: Int): Int {
+        return countQuery(1, 0, xs.size - 1, x1, x2, y1, y2)
+    }
+
+    fun existsInRectangle(x1: Int, x2: Int, y1: Int, y2: Int): Boolean {
+        return existsQuery(1, 0, xs.size - 1, x1, x2, y1, y2)
+    }
+
+    private fun countQuery(node: Int, l: Int, r: Int, x1: Int, x2: Int, y1: Int, y2: Int): Int {
+        if (xs[r] < x1 || xs[l] > x2) return 0
+        if (x1 <= xs[l] && xs[r] <= x2) {
+            val list = tree[node]
+            val leftIdx = lowerBound(list, y1)
+            val rightIdx = upperBound(list, y2)
+            return rightIdx - leftIdx
+        }
+        val mid = (l + r) / 2
+        return countQuery(node * 2, l, mid, x1, x2, y1, y2) +
+                countQuery(node * 2 + 1, mid + 1, r, x1, x2, y1, y2)
+    }
+
+    private fun existsQuery(node: Int, l: Int, r: Int, x1: Int, x2: Int, y1: Int, y2: Int): Boolean {
+        if (xs[r] < x1 || xs[l] > x2) return false
+        if (x1 <= xs[l] && xs[r] <= x2) {
+            val list = tree[node]
+            val leftIdx = lowerBound(list, y1)
+            return leftIdx < list.size && list[leftIdx] <= y2
+        }
+        val mid = (l + r) / 2
+        return existsQuery(node * 2, l, mid, x1, x2, y1, y2) ||
+                existsQuery(node * 2 + 1, mid + 1, r, x1, x2, y1, y2)
+    }
+
+    private fun lowerBound(list: List<Int>, value: Int): Int {
+        var low = 0
+        var high = list.size
+        while (low < high) {
+            val mid = (low + high) / 2
+            if (list[mid] < value) low = mid + 1 else high = mid
+        }
+        return low
+    }
+
+    private fun upperBound(list: List<Int>, value: Int): Int {
+        var low = 0
+        var high = list.size
+        while (low < high) {
+            val mid = (low + high) / 2
+            if (list[mid] <= value) low = mid + 1 else high = mid
+        }
+        return low
+    }
+}
+
+
+fun maxRectangleArea(xCoord: IntArray, yCoord: IntArray): Long {
+    val n = xCoord.size
+    val tree = SegmentTree2D(List(n) { xCoord[it] to yCoord[it] })
+    val xy = mutableMapOf<Int, MutableList<Int>>()
+    val yx = mutableMapOf<Int, TreeSet<Int>>()
+
+    for (i in 0 until n) {
+        val x = xCoord[i]
+        val y = yCoord[i]
+        xy.computeIfAbsent(x) { mutableListOf() }.add(y)
+        yx.computeIfAbsent(y) { TreeSet() }.add(x)
+    }
+
+    var maxArea = -1L
+    for ((startX, yList) in xy) {
+        yList.sort()
+        for (i in 0 until yList.size - 1) {
+            val y1 = yList[i]
+            val y2 = yList[i + 1]
+            val endX1 = yx[y1]?.higher(startX) ?: continue
+            val endX2 = yx[y2]?.higher(startX) ?: continue
+            if (endX1 != endX2) continue
+            if (tree.existsInRectangle(startX, endX2, y1, y2)) continue
+            val area = (endX2 - startX).toLong() * (y2 - y1).toLong()
+            //   println("Area = $startX $endX2 $y1 $y2 = $area")
+            maxArea = maxOf(maxArea, area)
+        }
+    }
+    return maxArea
+
+}
+
+fun maxAbsValExpr(arr1: IntArray, arr2: IntArray): Int {
+    val n = arr1.size
+    val mins = IntArray(4) { Int.MAX_VALUE }
+    val maxes = IntArray(4) { Int.MIN_VALUE }
+    var result = Int.MIN_VALUE
+    for (i in 0 until n) {
+        val a = arr1[i]
+        val b = arr2[i]
+        mins[0] = minOf(mins[0], a + b + i)
+        mins[1] = minOf(mins[1], a - b + i)
+        mins[2] = minOf(mins[2], -a + b + i)
+        mins[3] = minOf(mins[3], -a - b + i)
+
+        maxes[0] = maxOf(maxes[0], a + b + i)
+        maxes[1] = maxOf(maxes[1], a - b + i)
+        maxes[2] = maxOf(maxes[2], -a + b + i)
+        maxes[3] = maxOf(maxes[3], -a - b + i)
+    }
+    for (i in 0 until 4) {
+        result = maxOf(result, maxes[i] - mins[i])
+    }
+    return result
+}
+
 
 fun main() {
     println(
-        lenOfVDiagonal(
-            "[[2,2,2,2,2],[2,0,2,2,0],[2,0,1,1,0],[1,0,2,2,2],[2,0,0,2,2]]".to2DIntArray(),
+        maxRectangleArea(
+            intArrayOf(71, 28, 71, 28, 98, 90, 71, 9, 77, 95, 43, 4, 34, 4, 33, 84, 4, 3, 90, 27),
+            intArrayOf(44, 95, 95, 44, 9, 82, 67, 6, 79, 42, 32, 56, 4, 64, 14, 58, 6, 82, 0, 16)
         )
     )
 }
