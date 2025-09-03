@@ -1,5 +1,6 @@
 package remote
 
+import local.to2DIntArray
 
 fun xorQueries(arr: IntArray, queries: Array<IntArray>): IntArray {
     val prefix = IntArray(arr.size + 1)
@@ -14,7 +15,7 @@ fun xorQueries(arr: IntArray, queries: Array<IntArray>): IntArray {
 
 fun main() {
     println(
-        minimumDifference(intArrayOf(1), 10)
+
     )
 }
 

@@ -246,17 +246,26 @@ fun containsNearbyAlmostDuplicate(nums: IntArray, indexDiff: Int, valueDiff: Int
 
     val n = nums.size
     val tree = MergeSortTreeInteger(nums)
-
-    for (i in 0 until n - indexDiff) {
+    for (i in 0 until n) {
         val num = nums[i]
-        val start = maxOf(0, i - indexDiff)
-        val end = minOf(n - 1, i + indexDiff)
-        val countInRange = tree.count(start, end) { list ->
-            val le1 = countLE(list, num + valueDiff).toLong()
-            val le2 = countLE(list, num - valueDiff - 1).toLong()
-            le1 - le2
+
+        val leftStart = maxOf(0, i - indexDiff)
+        val leftEnd = maxOf(-1, i - 1)
+        if (leftStart <= leftEnd) {
+            val countInRange1 = tree.count(leftStart, leftEnd) { list ->
+                (countLE(list, num + valueDiff) - countLE(list, num - valueDiff - 1)).toLong()
+            }
+            if (countInRange1 > 0L) return true
         }
-        if (countInRange > 0L) return true
+
+        val rightStart = i + 1
+        val rightEnd = minOf(n - 1, i + indexDiff)
+        if (rightStart <= rightEnd) {
+            val countInRange2 = tree.count(rightStart, rightEnd) { list ->
+                (countLE(list, num + valueDiff) - countLE(list, num - valueDiff - 1)).toLong()
+            }
+            if (countInRange2 > 0L) return true
+        }
     }
     return false
 }
