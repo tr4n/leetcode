@@ -422,7 +422,15 @@ fun frequencySort(s: String): String {
         }
 }
 
-
+fun findClosest(x: Int, y: Int, z: Int): Int {
+    val first = abs(x - z)
+    val second = abs(y - z)
+    return when {
+        first == second -> 0
+        first > second -> 2
+        else -> 1
+    }
+}
 
 fun main() {
     println(

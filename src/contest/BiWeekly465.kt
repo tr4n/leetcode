@@ -1,5 +1,8 @@
 package contest
 
+import kotlin.math.abs
+import kotlin.math.sqrt
+
 fun maxProduct(nums: IntArray): Long {
     class Node {
         val children = arrayOfNulls<Node>(2)
@@ -58,49 +61,34 @@ fun maxProduct(nums: IntArray): Long {
 }
 
 fun minDifference(n: Int, k: Int): IntArray {
-    val factors = mutableListOf<Int>()
-    var x = n
-    var d = 2
-    while (d * d <= x) {
-        while (x % d == 0) {
-            factors.add(d)
-            x /= d
-        }
-        d++
-    }
-    if (x > 1) factors.add(x)
-    factors.sort()
-
     val divisors = mutableListOf(1)
     for (i in 2..n / 2) {
         if (n % i == 0) divisors.add(i)
     }
-    val m = divisors.size
-    val picked = BooleanArray(divisors.size)
-    val path = mutableListOf<Int>()
 
+    val path = mutableListOf<Int>()
     var delta = Int.MAX_VALUE
     var result = listOf<Int>()
-    fun dfs(num: Int, min: Int, max: Int) {
+  //  println(divisors)
+    fun dfs(num: Int, min: Int, maxDivisor: Int) {
         if (num < 1) return
         if (path.size > k) return
 
         if (num == 1) {
-            if (max - min >= delta) return
+            val minDivisor = if(path.size < k) 1 else min
+            if (maxDivisor - minDivisor >= delta) return
+          //  println(path)
             result = path.toList()
-            delta = max - min
+            delta = maxDivisor - min
             return
         }
 
         for (i in divisors.indices) {
-            if (picked[i]) continue
             val divisor = divisors[i]
             if (num % divisor != 0) continue
-            picked[i] = true
             path.add(divisor)
-            dfs(num / divisor, minOf(min, divisor), maxOf(max, divisor))
+            dfs(num / divisor, minOf(min, divisor), maxOf(maxDivisor, divisor))
             path.removeLast()
-            picked[i] = false
         }
     }
     dfs(n, Int.MAX_VALUE, Int.MIN_VALUE)
@@ -111,7 +99,7 @@ fun minDifference(n: Int, k: Int): IntArray {
 
 fun main(){
     println(
-        minDifference(360, 4).toList()
+        minDifference(100, 2).toList()
     )
 
 }
