@@ -485,6 +485,21 @@ fun palindromePairs(words: Array<String>): List<List<Int>> {
         return forward == backward
     }
 
+    val hashSet = forwardHash.withIndex().associate { it.value to it.index }
+
+    for (i in 0 until n) {
+        val word = words[i]
+
+        var hash = 0L
+        for ((j, c) in word.withIndex()) {
+            hash = (hash + c.code * pow[j]) % mod
+            val index = hashSet[hash]
+            if(index != null && isPalindromePair(i,j)) {
+
+            }
+        }
+    }
+
     class Node {
         val children = mutableMapOf<Char, Node>()
         var isWord = false
