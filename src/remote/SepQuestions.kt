@@ -455,7 +455,7 @@ fun longestPalindrome(words: Array<String>): Int {
 
 
 fun palindromePairs(words: Array<String>): List<List<Int>> {
-
+    val n = words.size
     println(words.sumOf { it.length })
 
     val base = 131L
@@ -465,26 +465,23 @@ fun palindromePairs(words: Array<String>): List<List<Int>> {
     val pow = LongArray(maxLen + 1)
     pow[0] = 1
     for (i in 1..maxLen) pow[i] = (pow[i - 1] * base) % mod
+    val forwardHash = LongArray(n) {
+        val s = words[it]
+        var hash = 0L
+        for (ch in s) hash = (hash * base + ch.code) % mod
+        hash
+    }
 
-    data class HashInfo(val forward: Long, val backward: Long, val len: Int)
-
-    val hashes = words.map { s ->
-        var f = 0L
-        for (ch in s) f = (f * base + ch.code) % mod
-
-        var r = 0L
-        for (i in s.indices.reversed()) r = (r * base + s[i].code) % mod
-
-        HashInfo(f, r, s.length)
+    val backwardHash = LongArray(n) {
+        val s = words[it]
+        var hash = 0L
+        for (i in s.indices.reversed()) hash = (hash * base + s[i].code) % mod
+        hash
     }
 
     fun isPalindromePair(i: Int, j: Int): Boolean {
-        val a = hashes[i]
-        val b = hashes[j]
-
-        val forward = (a.forward * pow[b.len] + b.forward) % mod
-        val backward = (b.backward * pow[a.len] + a.backward) % mod
-
+        val forward = (forwardHash[i] * pow[words[j].length] + forwardHash[j]) % mod
+        val backward = (backwardHash[j] * pow[words[i].length] + backwardHash[i]) % mod
         return forward == backward
     }
 
@@ -547,8 +544,9 @@ fun palindromePairs(words: Array<String>): List<List<Int>> {
     val emptyIndex = words.indexOf("")
     if (emptyIndex != -1) {
         for (i in words.indices) {
-            val hash = hashes[i]
-            if (i != emptyIndex && hash.backward == hash.forward) {
+            val forward = forwardHash[i]
+            val backward = backwardHash[i]
+            if (i != emptyIndex && backward == forward) {
                 pairs.getOrPut(emptyIndex) { mutableSetOf() }.add(i)
                 pairs.getOrPut(i) { mutableSetOf() }.add(emptyIndex)
             }
