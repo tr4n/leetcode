@@ -432,11 +432,138 @@ fun findClosest(x: Int, y: Int, z: Int): Int {
     }
 }
 
+fun longestPalindrome(words: Array<String>): Int {
+    var length = 0
+    val freq = mutableMapOf<String, Int>()
+
+    for (word in words) {
+        val reversed = word.reversed()
+        val f = freq[reversed] ?: 0
+        if (f > 0) {
+            freq[reversed] = f - 1
+            length += 4
+            continue
+        }
+        freq[word] = (freq[word] ?: 0) + 1
+    }
+    val hasOddPalindrome = freq.any {
+        it.value % 2 == 1 && it.key[0] == it.key[1]
+    }
+    if (hasOddPalindrome) length += 2
+    return length
+}
+
+
+fun palindromePairs(words: Array<String>): List<List<Int>> {
+
+    println(words.sumOf { it.length })
+
+    val base = 131L
+    val mod = 1_000_000_007L
+
+    val maxLen = words.maxOf { it.length } * 2
+    val pow = LongArray(maxLen + 1)
+    pow[0] = 1
+    for (i in 1..maxLen) pow[i] = (pow[i - 1] * base) % mod
+
+    data class HashInfo(val forward: Long, val backward: Long, val len: Int)
+
+    val hashes = words.map { s ->
+        var f = 0L
+        for (ch in s) f = (f * base + ch.code) % mod
+
+        var r = 0L
+        for (i in s.indices.reversed()) r = (r * base + s[i].code) % mod
+
+        HashInfo(f, r, s.length)
+    }
+
+    fun isPalindromePair(i: Int, j: Int): Boolean {
+        val a = hashes[i]
+        val b = hashes[j]
+
+        val forward = (a.forward * pow[b.len] + b.forward) % mod
+        val backward = (b.backward * pow[a.len] + a.backward) % mod
+
+        return forward == backward
+    }
+
+    class Node {
+        val children = mutableMapOf<Char, Node>()
+        var isWord = false
+
+        val words = mutableSetOf<Int>()
+        val throughWords = mutableSetOf<Int>()
+    }
+
+    val root = Node()
+
+    for (i in words.indices) {
+        val word = words[i]
+        var node = root
+        for (j in (word.length - 1) downTo 0) {
+            val c = word[j]
+            node = node.children.computeIfAbsent(c) { Node() }
+            node.throughWords.add(i)
+        }
+        node.isWord = true
+        //  node.words.add(i)
+    }
+
+    val pairs = mutableMapOf<Int, MutableSet<Int>>()
+    for (i in words.indices) {
+        val word = words[i]
+        var node = root
+        var notMatch = false
+        for (c in word) {
+            val nextNode = node.children[c]
+            if (nextNode == null) {
+                notMatch = true
+                break
+            }
+            node = nextNode
+            if (node.isWord) {
+                if (pairs[i] == null) {
+                    pairs[i] = node.words.toMutableSet()
+                } else {
+                    pairs[i]?.addAll(node.words)
+                }
+                break
+            }
+        }
+
+        if (notMatch) continue
+        if (pairs[i] == null) {
+            pairs[i] = node.throughWords.toMutableSet()
+        } else {
+            pairs[i]?.addAll(node.throughWords)
+        }
+        pairs[i]?.remove(i)
+        pairs[i]?.removeIf {
+            it == i || !isPalindromePair(i, it)
+        }
+        //  println(pairs[i]?.toList())
+    }
+    val emptyIndex = words.indexOf("")
+    if (emptyIndex != -1) {
+        for (i in words.indices) {
+            val hash = hashes[i]
+            if (i != emptyIndex && hash.backward == hash.forward) {
+                pairs.getOrPut(emptyIndex) { mutableSetOf() }.add(i)
+                pairs.getOrPut(i) { mutableSetOf() }.add(emptyIndex)
+            }
+        }
+    }
+
+    return pairs.flatMap { (i, ints) ->
+        ints.map { listOf(i, it) }
+    }
+}
+
 fun main() {
     println(
-        maxRectangleArea(
-            intArrayOf(71, 28, 71, 28, 98, 90, 71, 9, 77, 95, 43, 4, 34, 4, 33, 84, 4, 3, 90, 27),
-            intArrayOf(44, 95, 95, 44, 9, 82, 67, 6, 79, 42, 32, 56, 4, 64, 14, 58, 6, 82, 0, 16)
+        palindromePairs(
+            arrayOf("abcd", "dcba", "lls", "s", "sssll")
         )
     )
 }
