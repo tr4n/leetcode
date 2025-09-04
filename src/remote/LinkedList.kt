@@ -115,6 +115,60 @@ fun deleteMiddle(head: ListNode?): ListNode? {
     return root.next
 }
 
+fun rotateRight(head: ListNode?, k: Int): ListNode? {
+    if (head == null) return null
+    var size = 1
+    var lastNode = head
+
+    while (lastNode?.next != null) {
+        lastNode = lastNode.next
+        size++
+    }
+
+    val p = k % size
+    if (p == 0) return head
+    var cut = size - p
+
+    var newLast = head
+    while (--cut > 0) {
+        newLast = newLast?.next
+    }
+
+    val newHead = newLast?.next
+    newLast?.next = null
+    lastNode?.next = head
+    return newHead
+}
+
+fun splitListToParts(head: ListNode?, k: Int): Array<ListNode?> {
+    if (head == null) return arrayOfNulls(k)
+    var size = 1
+    var lastNode = head
+    while (lastNode?.next != null) {
+        lastNode = lastNode.next
+        size++
+    }
+
+    val bucketSize = size / k
+    val extraSize = size % k
+
+    println("bucket $bucketSize, $extraSize")
+
+    var node = head
+    return Array(k) { id ->
+        var targetSize = bucketSize + if (id + 1 <= extraSize) 1 else 0
+        if (targetSize == 0) return@Array null
+        val partHead = node
+        while (--targetSize > 0) {
+            node = node?.next
+        }
+        val partLast = node
+        node = node?.next
+        partLast?.next = null
+        partHead
+    }
+}
+
 
 fun main() {
     println(

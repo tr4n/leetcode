@@ -456,121 +456,79 @@ fun longestPalindrome(words: Array<String>): Int {
 
 fun palindromePairs(words: Array<String>): List<List<Int>> {
     val n = words.size
-    println(words.sumOf { it.length })
-
     val base = 131L
     val mod = 1_000_000_007L
 
-    val maxLen = words.maxOf { it.length } * 2
+    val maxLen = words.maxOf { it.length }
     val pow = LongArray(maxLen + 1)
     pow[0] = 1
     for (i in 1..maxLen) pow[i] = (pow[i - 1] * base) % mod
-    val forwardHash = LongArray(n) {
-        val s = words[it]
-        var hash = 0L
-        for (ch in s) hash = (hash * base + ch.code) % mod
-        hash
+
+    fun hashForward(s: String): Long {
+        var h = 0L
+        for (c in s) h = (h * base + c.code) % mod
+        return h
     }
 
-    val backwardHash = LongArray(n) {
-        val s = words[it]
-        var hash = 0L
-        for (i in s.indices.reversed()) hash = (hash * base + s[i].code) % mod
-        hash
+    fun hashBackward(s: String): Long {
+        var h = 0L
+        for (i in s.indices.reversed()) h = (h * base + s[i].code) % mod
+        return h
+    }
+
+    val fHash = LongArray(n) { hashForward(words[it]) }
+    val bHash = LongArray(n) { hashBackward(words[it]) }
+    val len = IntArray(n) { words[it].length }
+
+    val wordMap = HashMap<Long, Int>()
+    for (i in 0 until n) {
+        wordMap[fHash[i]] = i
     }
 
     fun isPalindromePair(i: Int, j: Int): Boolean {
-        val forward = (forwardHash[i] * pow[words[j].length] + forwardHash[j]) % mod
-        val backward = (backwardHash[j] * pow[words[i].length] + backwardHash[i]) % mod
-        return forward == backward
+        val left = (fHash[i] * pow[len[j]] + fHash[j]) % mod
+        val right = (bHash[j] * pow[len[i]] + bHash[i]) % mod
+        return left == right
     }
 
-    val hashSet = forwardHash.withIndex().associate { it.value to it.index }
+    val result = mutableSetOf<List<Int>>()
 
     for (i in 0 until n) {
-        val word = words[i]
+        val w = words[i]
+        val m = w.length
 
-        var hash = 0L
-        for ((j, c) in word.withIndex()) {
-            hash = (hash + c.code * pow[j]) % mod
-            val index = hashSet[hash]
-            if(index != null && isPalindromePair(i,j)) {
+        var revPrefHash = 0L
+        for ((j, c) in w.withIndex()) {
+            // prefix [0..j]
+            revPrefHash = (revPrefHash + c.code * pow[j]) % mod
+            val idx = wordMap[revPrefHash]
+            if (idx != null && idx != i && isPalindromePair(i, idx)) {
+                result.add(listOf(i, idx)) // i + idx
+            }
+        }
 
+        var revSuffHash = 0L
+        for (j in m - 1 downTo 0) {
+            // suffix [j..m-1]
+            revSuffHash = (revSuffHash * base + w[j].code) % mod
+            val idx = wordMap[revSuffHash]
+            if (idx != null && idx != i && isPalindromePair(idx, i)) {
+                result.add(listOf(idx, i)) // idx + i
             }
         }
     }
 
-    class Node {
-        val children = mutableMapOf<Char, Node>()
-        var isWord = false
-
-        val words = mutableSetOf<Int>()
-        val throughWords = mutableSetOf<Int>()
-    }
-
-    val root = Node()
-
-    for (i in words.indices) {
-        val word = words[i]
-        var node = root
-        for (j in (word.length - 1) downTo 0) {
-            val c = word[j]
-            node = node.children.computeIfAbsent(c) { Node() }
-            node.throughWords.add(i)
-        }
-        node.isWord = true
-        //  node.words.add(i)
-    }
-
-    val pairs = mutableMapOf<Int, MutableSet<Int>>()
-    for (i in words.indices) {
-        val word = words[i]
-        var node = root
-        var notMatch = false
-        for (c in word) {
-            val nextNode = node.children[c]
-            if (nextNode == null) {
-                notMatch = true
-                break
-            }
-            node = nextNode
-            if (node.isWord) {
-                if (pairs[i] == null) {
-                    pairs[i] = node.words.toMutableSet()
-                } else {
-                    pairs[i]?.addAll(node.words)
-                }
-                break
-            }
-        }
-
-        if (notMatch) continue
-        if (pairs[i] == null) {
-            pairs[i] = node.throughWords.toMutableSet()
-        } else {
-            pairs[i]?.addAll(node.throughWords)
-        }
-        pairs[i]?.remove(i)
-        pairs[i]?.removeIf {
-            it == i || !isPalindromePair(i, it)
-        }
-        //  println(pairs[i]?.toList())
-    }
     val emptyIndex = words.indexOf("")
     if (emptyIndex != -1) {
         for (i in words.indices) {
-            val forward = forwardHash[i]
-            val backward = backwardHash[i]
-            if (i != emptyIndex && backward == forward) {
-                pairs.getOrPut(emptyIndex) { mutableSetOf() }.add(i)
-                pairs.getOrPut(i) { mutableSetOf() }.add(emptyIndex)
-            }
+            if (i == emptyIndex) continue
+            if (fHash[i] != bHash[i]) continue
+            result.add(listOf(emptyIndex, i))
+            result.add(listOf(i, emptyIndex))
         }
     }
 
-    return pairs.flatMap { (i, ints) ->
-        ints.map { listOf(i, it) }
-    }
+    return result.toList()
 }
 
 fun main() {

@@ -132,7 +132,7 @@ fun maxSubArray(nums: IntArray): Int {
     return globalMax
 }
 
-fun maxProduct(nums: IntArray): Int {
+fun maxProduct1(nums: IntArray): Int {
     val n = nums.size
 
     var currentMax = nums[0]
