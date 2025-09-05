@@ -531,10 +531,40 @@ fun palindromePairs(words: Array<String>): List<List<Int>> {
     return result.toList()
 }
 
+fun makeTheIntegerZero(num1: Int, num2: Int): Int {
+    val a = num1.toLong()
+    val b = num2.toLong()
+
+
+    for (k in 1..1000) {
+        val num = a - b * k
+        if (num <= 0) continue
+        //  println("$num : ${num.toString(2)}")
+        val bitCount = num.countOneBits()
+        if (num == 1L && k > 1) continue
+        if (bitCount <= k) return k
+    }
+    return -1
+}
+
+fun brokenCalc(startValue: Int, target: Int): Int {
+    var steps = 0
+    var x = target
+
+    while (x > startValue) {
+        if (x and 1 == 0) {
+            x = x shr 1
+        } else {
+            x++
+        }
+        steps++
+    }
+
+    return steps + (startValue - x)
+}
+
 fun main() {
     println(
-        palindromePairs(
-            arrayOf("abcd", "dcba", "lls", "s", "sssll")
-        )
+        brokenCalc(2, 1000000)
     )
 }
