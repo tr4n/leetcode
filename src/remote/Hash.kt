@@ -242,8 +242,8 @@ fun longestPalindrome(s: String, t: String): Int {
         }
     }
 
-   // println(palindromeStart.toList())
-  //  println(palindromeEnd.toList())
+    // println(palindromeStart.toList())
+    //  println(palindromeEnd.toList())
     val dp = Array(m) { IntArray(n) }
     for (i in (m - 1) downTo 0) {
         for (j in 0 until n) {
@@ -259,7 +259,7 @@ fun longestPalindrome(s: String, t: String): Int {
         }
     }
 
- //   println(dp.print())
+    //   println(dp.print())
     return longestLength
 }
 
@@ -310,8 +310,60 @@ fun checkInclusion(s1: String, s2: String): Boolean {
     return false
 }
 
+fun shortestPalindrome(s: String): String {
+    if (s.isEmpty()) return s
+    val hasher = PalindromeDoubleHasher(s)
+    val n = s.length
+    var lastIndex = 0
+    for (i in n - 1 downTo 1) {
+        val hash = hasher.getHash(0, i)
+        val revHash = hasher.getHashRev(0, i)
+        if (hash == revHash) {
+            lastIndex = i
+            break
+        }
+    }
+    println(lastIndex)
+    if (lastIndex == n - 1) return s
+    val lead = s.substring(lastIndex + 1).reversed()
+
+    return lead + s
+}
+
+fun longestDecomposition(text: String): Int {
+    val n = text.length
+    if (n == 1) return 1
+    val hasher = PalindromeDoubleHasher(text)
+    val d = Array(n) { IntArray(n) }
+
+    fun divide(start: Int, end: Int): Int {
+        if (start > end) return 0
+        if (start == end) return 1
+        if (d[start][end] > 0) return d[start][end]
+        val mid = (start + end) / 2
+        var result = Int.MIN_VALUE
+
+        for (i in 0..mid) {
+            if (start + i > end - i) break
+            val left = hasher.getHash(start, start + i)
+            val right = hasher.getHash(end - i, end)
+            if (left != right) continue
+
+            val parts = 2 + divide(start + i + 1, end - i - 1)
+            if (parts > result) {
+                result = parts
+            }
+        }
+        if (result == Int.MIN_VALUE) result = 1
+        d[start][end] = result
+        return result
+    }
+    divide(0, n - 1)
+    return d[0][n - 1]
+}
+
 fun main() {
     println(
-        longestPalindrome("mrb", "r")
+        longestDecomposition("ghiabcdefhelloadamhelloabcdefghi")
     )
 }
