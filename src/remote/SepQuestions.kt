@@ -2,6 +2,8 @@ package remote
 
 import java.util.*
 import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.log
 
 fun findDuplicates(nums: IntArray): List<Int> {
     val n = nums.size
@@ -561,6 +563,28 @@ fun brokenCalc(startValue: Int, target: Int): Int {
     }
 
     return steps + (startValue - x)
+}
+
+fun minOperations(queries: Array<IntArray>): Long {
+
+    fun prefix(n: Long): Long {
+        if (n <= 0) return 0
+        var k = 0
+        var pow = 1L
+        while (pow * 4 <= n) {
+            pow *= 4
+            k++
+        }
+        val gk = (1 - (k + 1) * pow + k * pow * 4) / 3
+        return gk + (k + 1).toLong() * (n - pow + 1)
+    }
+
+    var result = 0L
+    for ((start, end) in queries) {
+        val cnt = prefix(end.toLong()) - prefix(start.toLong() - 1L)
+        result += ceil(0.5 * cnt).toLong()
+    }
+    return result
 }
 
 fun main() {

@@ -1263,7 +1263,7 @@ fun wordBreak(s: String, wordDict: List<String>): Boolean {
     return dp[m]
 }
 
-fun longestPalindrome(s: String): String {
+fun longestPalindrome12(s: String): String {
     if (s.isEmpty()) return ""
     if (s.length == 1) return s
     val n = s.length

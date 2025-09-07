@@ -362,8 +362,297 @@ fun longestDecomposition(text: String): Int {
     return d[0][n - 1]
 }
 
+fun longestPrefix(s: String): String {
+    val n = s.length
+    if (n == 1) return ""
+    val mod1 = 1_000_000_007L
+    val mod2 = 1_000_000_009L
+    val base1 = 131L
+    val base2 = 137L
+    val pow1 = LongArray(n + 1)
+    val pow2 = LongArray(n + 1)
+    val prefix1 = LongArray(n + 1)
+    val prefix2 = LongArray(n + 1)
+    pow1[0] = 1L
+    pow2[0] = 1L
+    for (i in 0 until n) {
+        pow1[i + 1] = (pow1[i] * base1) % mod1
+        pow2[i + 1] = (pow2[i] * base2) % mod2
+    }
+    for (i in 0 until n) {
+        prefix1[i + 1] = (prefix1[i] * base1 + s[i].code) % mod1
+        prefix2[i + 1] = (prefix2[i] * base2 + s[i].code) % mod2
+    }
+
+    fun getHash(l: Int, r: Int): Pair<Long, Long> {
+        val hash1 = (prefix1[r + 1] - (prefix1[l] * pow1[r + 1 - l] % mod1) + mod1) % mod1
+        val hash2 = (prefix2[r + 1] - (prefix2[l] * pow2[r + 1 - l] % mod2) + mod2) % mod2
+        return hash1 to hash2
+    }
+
+    var index = -1
+    for (i in n - 2 downTo 0) {
+        val prefix = getHash(0, i)
+        val suffix = getHash(n - i - 1, n - 1)
+        if (suffix == prefix) {
+            index = i
+            break
+        }
+    }
+    println("$index")
+    return if (index < 0) "" else s.substring(0, index + 1)
+}
+
+
+fun longestPalindrome(s: String): String {
+    val n = s.length
+    if (n == 1) return s
+    val mod1 = 1_000_000_007L
+    val mod2 = 1_000_000_009L
+    val base1 = 131L
+    val base2 = 137L
+    val pow1 = LongArray(n + 1)
+    val pow2 = LongArray(n + 1)
+    val prefix1 = LongArray(n + 1)
+    val prefix2 = LongArray(n + 1)
+    val revPrefix1 = LongArray(n + 1)
+    val revPrefix2 = LongArray(n + 1)
+    pow1[0] = 1L
+    pow2[0] = 1L
+    for (i in 0 until n) {
+        pow1[i + 1] = (pow1[i] * base1) % mod1
+        pow2[i + 1] = (pow2[i] * base2) % mod2
+    }
+    for (i in 0 until n) {
+        prefix1[i + 1] = (prefix1[i] * base1 + s[i].code) % mod1
+        prefix2[i + 1] = (prefix2[i] * base2 + s[i].code) % mod2
+    }
+
+    for (i in n - 1 downTo 0) {
+        revPrefix1[n - i] = (revPrefix1[n - i - 1] * base1 + s[i].code) % mod1
+        revPrefix2[n - i] = (revPrefix2[n - i - 1] * base2 + s[i].code) % mod2
+
+    }
+
+    fun getHash(l: Int, r: Int): Pair<Long, Long> {
+        if (l < 0 || r >= n || l > r) return 0L to 0L
+        val hash1 = (prefix1[r + 1] - (prefix1[l] * pow1[r + 1 - l] % mod1) + mod1) % mod1
+        val hash2 = (prefix2[r + 1] - (prefix2[l] * pow2[r + 1 - l] % mod2) + mod2) % mod2
+        return hash1 to hash2
+    }
+
+    fun getRevHash(ql: Int, qr: Int): Pair<Long, Long> {
+        if (ql < 0 || qr >= n || ql > qr) return 0L to 0L
+        val l = n - 1 - qr
+        val r = n - 1 - ql
+        val hash1 = (revPrefix1[r + 1] - (revPrefix1[l] * pow1[r + 1 - l] % mod1) + mod1) % mod1
+        val hash2 = (revPrefix2[r + 1] - (revPrefix2[l] * pow2[r + 1 - l] % mod2) + mod2) % mod2
+        return hash1 to hash2
+    }
+
+    fun isPalindrome(l: Int, r: Int): Boolean {
+        if (l < 0 || r >= n || l > r) return false
+        val hash = getHash(l, r)
+        val revHash = getRevHash(l, r)
+        return hash == revHash
+    }
+
+    var bestL = 0
+    var bestR = 0
+    // odd len palindrome
+    for (center in 0 until n) {
+        var lo = 0
+        var hi = minOf(center, n - 1 - center)
+
+        while (lo <= hi) {
+            val mid = (lo + hi) / 2
+            val isPalindrome = isPalindrome(center - mid, center + mid)
+            if (isPalindrome) {
+                val len = 2 * mid + 1
+                val bestLen = bestR - bestL + 1
+                if (len > bestLen) {
+                    bestL = center - mid
+                    bestR = center + mid
+                }
+                lo = mid + 1
+            } else {
+                hi = mid - 1
+            }
+        }
+    }
+
+    // even palindrome
+
+    for (center in 0 until n - 1) {
+        var lo = 0
+        var hi = minOf(center + 1, n - 2 - center)
+
+        while (lo <= hi) {
+            val mid = (lo + hi) / 2
+            //  if(lo < 0)  println("$center, $lo $hi $mid")
+            val isPalindrome = isPalindrome(center - mid, center + 1 + mid)
+            if (isPalindrome) {
+                val len = 2 * (mid + 1)
+                val bestLen = bestR - bestL + 1
+                if (len > bestLen) {
+                    bestL = center - mid
+                    bestR = center + mid + 1
+                }
+                lo = mid + 1
+            } else {
+                hi = mid - 1
+            }
+        }
+    }
+    return s.substring(bestL, bestR + 1)
+}
+
+fun maxProduct(s: String): Long {
+    val n = s.length
+    if (n == 1) return 0L
+    val mod1 = 1_000_000_007L
+    val mod2 = 1_000_000_009L
+    val base1 = 131L
+    val base2 = 137L
+    val pow1 = LongArray(n + 1)
+    val pow2 = LongArray(n + 1)
+    val prefix1 = LongArray(n + 1)
+    val prefix2 = LongArray(n + 1)
+    val revPrefix1 = LongArray(n + 1)
+    val revPrefix2 = LongArray(n + 1)
+    pow1[0] = 1L
+    pow2[0] = 1L
+    for (i in 0 until n) {
+        pow1[i + 1] = (pow1[i] * base1) % mod1
+        pow2[i + 1] = (pow2[i] * base2) % mod2
+    }
+    for (i in 0 until n) {
+        prefix1[i + 1] = (prefix1[i] * base1 + s[i].code) % mod1
+        prefix2[i + 1] = (prefix2[i] * base2 + s[i].code) % mod2
+    }
+
+    for (i in n - 1 downTo 0) {
+        revPrefix1[n - i] = (revPrefix1[n - i - 1] * base1 + s[i].code) % mod1
+        revPrefix2[n - i] = (revPrefix2[n - i - 1] * base2 + s[i].code) % mod2
+
+    }
+
+    fun getHash(l: Int, r: Int): Pair<Long, Long> {
+        if (l < 0 || r >= n || l > r) return 0L to 0L
+        val hash1 = (prefix1[r + 1] - (prefix1[l] * pow1[r + 1 - l] % mod1) + mod1) % mod1
+        val hash2 = (prefix2[r + 1] - (prefix2[l] * pow2[r + 1 - l] % mod2) + mod2) % mod2
+        return hash1 to hash2
+    }
+
+    fun getRevHash(ql: Int, qr: Int): Pair<Long, Long> {
+        if (ql < 0 || qr >= n || ql > qr) return 0L to 0L
+        val l = n - 1 - qr
+        val r = n - 1 - ql
+        val hash1 = (revPrefix1[r + 1] - (revPrefix1[l] * pow1[r + 1 - l] % mod1) + mod1) % mod1
+        val hash2 = (revPrefix2[r + 1] - (revPrefix2[l] * pow2[r + 1 - l] % mod2) + mod2) % mod2
+        return hash1 to hash2
+    }
+
+    fun isOddPalindrome(l: Int, r: Int): Boolean {
+        if (l < 0 || r >= n || l > r) return false
+        val len = r - l + 1
+        if (len % 2 == 0) return false
+        val hash = getHash(l, r)
+        val revHash = getRevHash(l, r)
+        return hash == revHash
+    }
+
+    val radius = IntArray(n)
+
+    for (center in 0 until n) {
+        var lo = 0
+        var hi = minOf(center, n - 1 - center)
+        var r = 0
+        while (lo <= hi) {
+            val mid = (lo + hi) / 2
+            val isPalindrome = isOddPalindrome(center - mid, center + mid)
+            if (isPalindrome) {
+                r = mid
+                lo = mid + 1
+            } else {
+                hi = mid - 1
+            }
+        }
+        radius[center] = r
+    }
+
+    fun computePalEnds(radius: IntArray): IntArray {
+        val n = radius.size
+        val palEnds = IntArray(n)
+        for (c in 0 until n) {
+            val r = radius[c]
+            val right = c + r
+            if (right < n) {
+                val len = 2 * r + 1
+                palEnds[right] = maxOf(palEnds[right], len)
+            }
+        }
+
+        for (i in n - 2 downTo 0) {
+            palEnds[i] = maxOf(palEnds[i], palEnds[i + 1] - 2)
+        }
+
+        return palEnds
+    }
+
+    fun computePalStarts(radius: IntArray): IntArray {
+        val n = radius.size
+        val palStarts = IntArray(n)
+
+        for (c in 0 until n) {
+            val r = radius[c]
+            val left = c - r
+            if (left >= 0) {
+                val len = 2 * r + 1
+                palStarts[left] = maxOf(palStarts[left], len)
+            }
+        }
+
+        for (i in 1 until n) {
+            palStarts[i] = maxOf(palStarts[i], palStarts[i - 1] - 2)
+        }
+
+        return palStarts
+    }
+
+    val palStarts = computePalStarts(radius)
+    val palEnds = computePalEnds(radius)
+
+    var maxProduct = 1L
+    //  println(radius.toList())
+    //  println(palStarts.toList())
+    //   println(palEnds.toList())
+    val maxLeft = IntArray(n)
+    maxLeft[0] = 1
+    for (i in 1 until n) {
+        maxLeft[i] = maxOf(maxLeft[i - 1], palEnds[i])
+    }
+    val maxRight = IntArray(n)
+    maxRight[n - 1] = 1
+    for (i in (n - 2) downTo 0) {
+        maxRight[i] = maxOf(maxRight[i + 1], palStarts[i])
+    }
+    for (i in 0 until n - 1) {
+        val left = maxLeft[i].toLong()
+        val right = maxRight[i + 1].toLong()
+        val p = left * right
+        if (p > maxProduct) {
+            maxProduct = p
+        }
+    }
+
+    return maxProduct
+}
+
 fun main() {
     println(
-        longestDecomposition("ghiabcdefhelloadamhelloabcdefghi")
+        maxProduct(
+            "zaaaxbbby"
+        )
     )
 }
