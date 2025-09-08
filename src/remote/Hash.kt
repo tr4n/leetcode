@@ -994,6 +994,71 @@ fun sumScores(s: String): Long {
     return sum
 }
 
+fun beautifulIndices(s: String, a: String, b: String, k: Int): List<Int> {
+    val n = s.length
+    val mod1 = 1_000_000_007L
+    val mod2 = 1_000_000_009L
+    val base1 = 131L
+    val base2 = 137L
+    val pow1 = LongArray(n + 1)
+    val pow2 = LongArray(n + 1)
+    val prefix1 = LongArray(n + 1)
+    val prefix2 = LongArray(n + 1)
+
+    pow1[0] = 1L
+    pow2[0] = 1L
+    for (i in 0 until n) {
+        pow1[i + 1] = (pow1[i] * base1) % mod1
+        pow2[i + 1] = (pow2[i] * base2) % mod2
+    }
+    for (i in 0 until n) {
+        prefix1[i + 1] = (prefix1[i] * base1 + s[i].code) % mod1
+        prefix2[i + 1] = (prefix2[i] * base2 + s[i].code) % mod2
+    }
+
+    fun getHash(l: Int, r: Int): Pair<Long, Long> {
+        if (l < 0 || r >= n || l > r) return 0L to 0L
+        val hash1 = (prefix1[r + 1] - (prefix1[l] * pow1[r + 1 - l] % mod1) + mod1) % mod1
+        val hash2 = (prefix2[r + 1] - (prefix2[l] * pow2[r + 1 - l] % mod2) + mod2) % mod2
+        return hash1 to hash2
+    }
+
+    var hashA1 = 0L
+    var hashA2 = 0L
+    for (i in 0 until a.length) {
+        hashA1 = (hashA1 * base1 + a[i].code) % mod1
+        hashA2 = (hashA2 * base2 + a[i].code) % mod2
+    }
+
+    var hashB1 = 0L
+    var hashB2 = 0L
+    for (i in 0 until b.length) {
+        hashB1 = (hashB1 * base1 + b[i].code) % mod1
+        hashB2 = (hashB2 * base2 + b[i].code) % mod2
+    }
+    val hashA = Pair(hashA1, hashA2)
+    val hashB = Pair(hashB1, hashB2)
+
+    val posA = mutableListOf<Int>()
+    val posB = mutableListOf<Int>()
+    for (i in 0 until n) {
+        val rightA = i + a.length - 1
+        val rightB = i + b.length - 1
+        if (rightA < n && getHash(i, rightA) == hashA) posA.add(i)
+        if (rightB < n && getHash(i, rightB) == hashB) posB.add(i)
+    }
+
+    val result = mutableListOf<Int>()
+    for (i in posA) {
+        val a = (i - k).coerceAtLeast(0)
+        val b = (i + k).coerceAtMost(n - 1)
+        val idx = posB.binarySearch(a).let { if (it < 0) -it - 1 else it }
+        val hasJ = idx < posB.size && posB[idx] <= b
+        if (hasJ) result.add(i)
+    }
+    return result
+}
+
 fun main() {
     println(
         sumScores("babab")
