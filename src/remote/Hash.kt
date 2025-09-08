@@ -146,7 +146,7 @@ fun longestPalindrome1(s: String, t: String): Int {
     return longestLength
 }
 
-class PalindromeDoubleHasher(
+class CharDoubleHasher(
     s: String,
     private var pow1: LongArray = LongArray(0),
     private var pow2: LongArray = LongArray(0)
@@ -206,8 +206,8 @@ class PalindromeDoubleHasher(
 fun longestPalindrome(s: String, t: String): Int {
     val m = s.length
     val n = t.length
-    val hashS = PalindromeDoubleHasher(s)
-    val hashT = PalindromeDoubleHasher(t)
+    val hashS = CharDoubleHasher(s)
+    val hashT = CharDoubleHasher(t)
 
     val palindromeStart = IntArray(m)
     val palindromeEnd = IntArray(n)
@@ -312,7 +312,7 @@ fun checkInclusion(s1: String, s2: String): Boolean {
 
 fun shortestPalindrome(s: String): String {
     if (s.isEmpty()) return s
-    val hasher = PalindromeDoubleHasher(s)
+    val hasher = CharDoubleHasher(s)
     val n = s.length
     var lastIndex = 0
     for (i in n - 1 downTo 1) {
@@ -333,7 +333,7 @@ fun shortestPalindrome(s: String): String {
 fun longestDecomposition(text: String): Int {
     val n = text.length
     if (n == 1) return 1
-    val hasher = PalindromeDoubleHasher(text)
+    val hasher = CharDoubleHasher(text)
     val d = Array(n) { IntArray(n) }
 
     fun divide(start: Int, end: Int): Int {
@@ -649,10 +649,353 @@ fun maxProduct(s: String): Long {
     return maxProduct
 }
 
+fun longestDupSubstring(s: String): String {
+    val n = s.length
+    val distinctCount = s.toSet().size
+    if (distinctCount == n) return ""
+    if (distinctCount == 1) return s.substring(1)
+
+    val mod1 = 1_000_000_007L
+    val mod2 = 1_000_000_009L
+    val base1 = 131L
+    val base2 = 137L
+    val pow1 = LongArray(n + 1)
+    val pow2 = LongArray(n + 1)
+    val prefix1 = LongArray(n + 1)
+    val prefix2 = LongArray(n + 1)
+
+    pow1[0] = 1L
+    pow2[0] = 1L
+    for (i in 0 until n) {
+        pow1[i + 1] = (pow1[i] * base1) % mod1
+        pow2[i + 1] = (pow2[i] * base2) % mod2
+    }
+    for (i in 0 until n) {
+        prefix1[i + 1] = (prefix1[i] * base1 + s[i].code) % mod1
+        prefix2[i + 1] = (prefix2[i] * base2 + s[i].code) % mod2
+    }
+
+    fun getHash(l: Int, r: Int): Pair<Long, Long> {
+        if (l < 0 || r >= n || l > r) return 0L to 0L
+        val hash1 = (prefix1[r + 1] - (prefix1[l] * pow1[r + 1 - l] % mod1) + mod1) % mod1
+        val hash2 = (prefix2[r + 1] - (prefix2[l] * pow2[r + 1 - l] % mod2) + mod2) % mod2
+        return hash1 to hash2
+    }
+
+    fun indexOfDuplicate(length: Int): Int {
+        val set = mutableSetOf<Pair<Long, Long>>()
+        for (i in 0 until n - length + 1) {
+            val hash = getHash(i, i + length - 1)
+            if (hash in set) return i
+            set.add(hash)
+        }
+        return -1
+    }
+
+    var longest = 0
+    var duplicatePos = -1
+    var lo = 1
+    var hi = n - 1
+
+    while (lo <= hi) {
+        val mid = (lo + hi) / 2
+        val value = indexOfDuplicate(mid)
+        if (value >= 0) {
+            longest = mid
+            duplicatePos = value
+            //  println(s.substring(duplicatePos, duplicatePos + longest))
+            lo = mid + 1
+        } else {
+            hi = mid - 1
+        }
+    }
+    if (longest <= 0) return ""
+    return s.substring(duplicatePos, duplicatePos + longest)
+}
+
+fun countMatchingSubarrays(nums: IntArray, pattern: IntArray): Int {
+    val n = nums.size
+    val k = pattern.size
+
+    val numbers = IntArray(n)
+    for (i in 1 until n) {
+        val a = nums[i]
+        val b = nums[i - 1]
+        val num = when {
+            a > b -> 3
+            a == b -> 2
+            else -> 1
+        }
+        numbers[i] = num
+    }
+
+    val mod = 1_000_000_007L
+    val base = 5L
+    val pow = LongArray(n + 1)
+    val hashes = LongArray(n + 1)
+
+    pow[0] = 1L
+
+    for (i in 0 until n) {
+        pow[i + 1] = (pow[i] * base) % mod
+    }
+    for (i in 0 until n) {
+        hashes[i + 1] = (hashes[i] * base + numbers[i]) % mod
+    }
+
+    fun getHash(l: Int, r: Int): Long {
+        if (l < 0 || r >= n || l > r) return 0L
+        val hash = (hashes[r + 1] - (hashes[l] * pow[r + 1 - l] % mod) + mod) % mod
+        return hash
+    }
+
+    var targetHash = 0L
+    for (i in 0 until k) {
+        targetHash = (targetHash * base % mod + (pattern[i] + 2L)) % mod
+    }
+
+    var cnt = 0
+
+    for (i in 0 until n - k) {
+        val hash = getHash(i + 1, i + k)
+        if (hash == targetHash) cnt++
+    }
+
+    //  println(numbers.toList())
+    //   println("$mod $targetHash")
+    //  println(hashes.toList())
+    return cnt
+}
+
+fun findRepeatedDnaSequences(s: String): List<String> {
+    val n = s.length
+    val mod1 = 1_000_000_007L
+    val mod2 = 1_000_000_009L
+    val base1 = 131L
+    val base2 = 137L
+    val pow1 = LongArray(n + 1)
+    val pow2 = LongArray(n + 1)
+    val prefix1 = LongArray(n + 1)
+    val prefix2 = LongArray(n + 1)
+
+    pow1[0] = 1L
+    pow2[0] = 1L
+    for (i in 0 until n) {
+        pow1[i + 1] = (pow1[i] * base1) % mod1
+        pow2[i + 1] = (pow2[i] * base2) % mod2
+    }
+    for (i in 0 until n) {
+        prefix1[i + 1] = (prefix1[i] * base1 + s[i].code) % mod1
+        prefix2[i + 1] = (prefix2[i] * base2 + s[i].code) % mod2
+    }
+
+    fun getHash(l: Int, r: Int): Pair<Long, Long> {
+        if (l < 0 || r >= n || l > r) return 0L to 0L
+        val hash1 = (prefix1[r + 1] - (prefix1[l] * pow1[r + 1 - l] % mod1) + mod1) % mod1
+        val hash2 = (prefix2[r + 1] - (prefix2[l] * pow2[r + 1 - l] % mod2) + mod2) % mod2
+        return hash1 to hash2
+    }
+
+    val map = mutableMapOf<Pair<Long, Long>, MutableList<Int>>()
+    for (i in 0 until n - 9) {
+        val hash = getHash(i, i + 9)
+        if (map[hash] == null) {
+            map[hash] = mutableListOf(i)
+        } else {
+            map[hash]?.add(i)
+        }
+    }
+
+    val result = mutableListOf<String>()
+    for (list in map.values) {
+        if (list.size < 2) continue
+        val index = list[0]
+        result.add(s.substring(index, index + 10))
+    }
+    return result
+}
+
+fun hasAllCodes(s: String, k: Int): Boolean {
+    val n = s.length
+    val size = 1 shl k
+    if (size > n) return false
+    val used = BooleanArray(size)
+
+    var num = 0
+    for (i in 0 until k.coerceAtMost(n)) {
+        num = ((num shl 1) + (s[i] - '0'))
+    }
+
+    used[num] = true
+    var count = 1
+
+    for (i in k until n) {
+        num = ((num shl 1) + (s[i] - '0')) and (size - 1)
+        if (!used[num]) {
+            count++
+            used[num] = true
+            if (count == size) return true
+        }
+
+        //  println(num.toString(2))
+    }
+
+    println("$count ?? $size")
+    return count == size
+}
+
+fun distinctEchoSubstrings(text: String): Int {
+    val n = text.length
+    val mod1 = 1_000_000_007L
+    val mod2 = 1_000_000_009L
+    val base1 = 131L
+    val base2 = 137L
+    val pow1 = LongArray(n + 1)
+    val pow2 = LongArray(n + 1)
+    val prefix1 = LongArray(n + 1)
+    val prefix2 = LongArray(n + 1)
+
+    pow1[0] = 1L
+    pow2[0] = 1L
+    for (i in 0 until n) {
+        pow1[i + 1] = (pow1[i] * base1) % mod1
+        pow2[i + 1] = (pow2[i] * base2) % mod2
+    }
+    for (i in 0 until n) {
+        prefix1[i + 1] = (prefix1[i] * base1 + text[i].code) % mod1
+        prefix2[i + 1] = (prefix2[i] * base2 + text[i].code) % mod2
+    }
+
+    fun getHash(l: Int, r: Int): Pair<Long, Long> {
+        if (l < 0 || r >= n || l > r) return 0L to 0L
+        val hash1 = (prefix1[r + 1] - (prefix1[l] * pow1[r + 1 - l] % mod1) + mod1) % mod1
+        val hash2 = (prefix2[r + 1] - (prefix2[l] * pow2[r + 1 - l] % mod2) + mod2) % mod2
+        return hash1 to hash2
+    }
+
+    val result = mutableSetOf<Pair<Long, Long>>()
+    for (k in 1..n / 2) {
+        for (i in 0 until n - 2 * k + 1) {
+            val part1 = getHash(i, i + k - 1)
+            val part2 = getHash(i + k, i + 2 * k - 1)
+            if (part1 == part2) result.add(part1)
+            // if (part1 == part2) println(text.substring(i, i + k))
+        }
+    }
+    return result.size
+}
+
+fun longestCommonSubpath(maxNode: Int, paths: Array<IntArray>): Int {
+    val m = paths.size
+    val maxLen = paths.maxOf { it.size }
+    paths.sortBy { it.size }
+
+    val mod1 = 1_000_000_007L
+    val mod2 = 1_000_000_009L
+    val base1 = 100_003L
+    val base2 = 100_007L
+    val pow1 = LongArray(maxLen + 1)
+    val pow2 = LongArray(maxLen + 1)
+
+    pow1[0] = 1L
+    pow2[0] = 1L
+    for (i in 0 until maxLen) {
+        pow1[i + 1] = (pow1[i] * base1) % mod1
+        pow2[i + 1] = (pow2[i] * base2) % mod2
+    }
+
+    val prefix1 = Array(m) { LongArray(paths[it].size + 1) }
+    val prefix2 = Array(m) { LongArray(paths[it].size + 1) }
+
+
+    for (i in 0 until m) {
+        for (j in 0 until paths[i].size) {
+            prefix1[i][j + 1] = ((base1 * prefix1[i][j]) % mod1 + 1L + paths[i][j]) % mod1
+            prefix2[i][j + 1] = ((base2 * prefix2[i][j]) % mod2 + 1L + paths[i][j]) % mod2
+        }
+    }
+
+
+    fun getHash(path: Int, l: Int, r: Int): Pair<Long, Long> {
+        // if (l < 0 || r >= maxLen || l > r) return 0L
+        val hash1 = (prefix1[path][r + 1] - (prefix1[path][l] * pow1[r + 1 - l] % mod1) + mod1) % mod1
+        val hash2 = (prefix2[path][r + 1] - (prefix2[path][l] * pow2[r + 1 - l] % mod2) + mod2) % mod2
+        return Pair(hash1, hash2)
+    }
+
+    fun hasCommon(len: Int): Boolean {
+        var set = mutableSetOf<Pair<Long, Long>>()
+
+        for (i in 0 until paths[0].size - len + 1) {
+            //  println(paths[0].toList().subList(i, i + len))
+            val hash = getHash(0, i, i + len - 1)
+            set.add(hash)
+        }
+
+        for (path in 1 until m) {
+            val newSet = mutableSetOf<Pair<Long, Long>>()
+
+            for (i in 0 until paths[path].size - len + 1) {
+                val hash = getHash(path, i, i + len - 1)
+                if (hash in set) newSet.add(hash)
+            }
+            if (newSet.isEmpty()) return false
+            set = newSet
+        }
+//        if (set.isNotEmpty()) {
+//            println("len $len, $set")
+//        }
+        return set.isNotEmpty()
+    }
+
+    val firstPathSize = paths[0].size
+    var longest = 0
+    var lo = 1
+    var hi = firstPathSize
+
+    while (lo <= hi) {
+        val len = (lo + hi) / 2
+
+        val hasCommon = hasCommon(len)
+
+        if (hasCommon) {
+            longest = len
+            lo = len + 1
+        } else {
+            hi = len - 1
+        }
+    }
+    return longest
+}
+
+fun sumScores(s: String): Long {
+    val n = s.length
+    val hasher = CharDoubleHasher(s)
+
+    var sum = 0L
+    for (i in (n - 1) downTo 0) {
+        var score = 0
+        var lo = 1
+        var hi = n - i
+
+        while (lo <= hi) {
+            val mid = (lo + hi) / 2
+            val prefix1 = hasher.getHash(0, mid - 1)
+            val prefix2 = hasher.getHash(i, i + mid - 1)
+            if (prefix1 == prefix2) {
+                score = mid
+                lo = mid + 1
+            } else {
+                hi = mid - 1
+            }
+        }
+        sum += score.toLong()
+    }
+    return sum
+}
+
 fun main() {
     println(
-        maxProduct(
-            "zaaaxbbby"
-        )
+        sumScores("babab")
     )
 }

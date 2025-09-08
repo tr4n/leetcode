@@ -3,7 +3,6 @@ package remote
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.ceil
-import kotlin.math.log
 
 fun findDuplicates(nums: IntArray): List<Int> {
     val n = nums.size
@@ -587,8 +586,106 @@ fun minOperations(queries: Array<IntArray>): Long {
     return result
 }
 
+fun countPrefixSuffixPairs(words: Array<String>): Long {
+
+    val n = words.maxOf { it.length }
+
+    val mod1 = 1_000_000_007L
+    val base1 = 131L
+    val pow1 = LongArray(n + 1)
+
+    pow1[0] = 1L
+
+    for (i in 0 until n) {
+        pow1[i + 1] = (pow1[i] * base1) % mod1
+    }
+
+    fun createHash(word: String): Long {
+        var hash1 = 0L
+        for (c in word) {
+            hash1 = (hash1 * base1 + c.code) % mod1
+        }
+        return hash1
+    }
+
+    val hashMap = mutableMapOf<Long, Int>()
+
+    // println(hashMap)
+
+    class Node {
+        val children = mutableMapOf<Char, Node>()
+        var words: MutableSet<Long>? = null
+    }
+
+    val forward = Node()
+    val backward = Node()
+    var cnt = 0L
+
+    for (i in words.indices) {
+        val word = words[i]
+        val hash = createHash(word)
+
+        var fNode = forward
+        var bNode = backward
+
+        for (i in 0 until word.length) {
+            val j = word.length - 1 - i
+            val front = word[i]
+            val back = word[j]
+
+            val nextFront = fNode.children[front]
+            val nextBack = bNode.children[back]
+            if (nextFront == null || nextBack == null) break
+            val frontSet = nextFront.words
+            val backSet = nextBack.words
+            val intersectCount = if (frontSet.isNullOrEmpty() || backSet.isNullOrEmpty()) {
+                0L
+            } else {
+                frontSet.intersect(backSet).sumOf { hashMap[it] ?: 0 }.toLong()
+            }
+
+
+            cnt += intersectCount
+            fNode = nextFront
+            bNode = nextBack
+        }
+
+        fNode = forward
+        for (j in word.indices) {
+            val c = word[j]
+            fNode = fNode.children.computeIfAbsent(c) { Node() }
+        }
+        if (fNode.words.isNullOrEmpty()) {
+            fNode.words = mutableSetOf(hash)
+        } else {
+            fNode.words?.add(hash)
+        }
+
+        bNode = backward
+        for (j in word.length - 1 downTo 0) {
+            val c = word[j]
+            bNode = bNode.children.computeIfAbsent(c) { Node() }
+        }
+        if (bNode.words.isNullOrEmpty()) {
+            bNode.words = mutableSetOf(hash)
+        } else {
+            bNode.words?.add(hash)
+        }
+
+        hashMap[hash] = (hashMap[hash] ?: 0) + 1
+    }
+
+    return cnt
+}
+
+
+
 fun main() {
+    val builder = StringBuilder()
+    for (i in 1 until 50_000) {
+        builder.append('e')
+    }
     println(
-        brokenCalc(2, 1000000)
+        countPrefixSuffixPairs(arrayOf("a", builder.toString()))
     )
 }
