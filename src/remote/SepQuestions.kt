@@ -678,6 +678,27 @@ fun countPrefixSuffixPairs(words: Array<String>): Long {
     return cnt
 }
 
+fun peopleAwareOfSecret(n: Int, delay: Int, forget: Int): Int {
+    val mod = 1_000_000_007L
+    val dp = LongArray(n + 1)
+    dp[1] = 1
+
+    for (day in 2..n) {
+        var sum = 0L
+        for (j in 1 until day) {
+            if (j + delay <= day && day < j + forget) {
+                sum = (sum + dp[j]) % mod
+            }
+        }
+        dp[day] = sum
+    }
+
+    var ans = 0L
+    for (i in n - forget + 1..n) {
+        if (i >= 1) ans = (ans + dp[i]) % mod
+    }
+    return ans.toInt()
+}
 
 
 fun main() {
@@ -686,6 +707,6 @@ fun main() {
         builder.append('e')
     }
     println(
-        countPrefixSuffixPairs(arrayOf("a", builder.toString()))
+        peopleAwareOfSecret(6, 2, 4)
     )
 }

@@ -146,63 +146,6 @@ fun longestPalindrome1(s: String, t: String): Int {
     return longestLength
 }
 
-class CharDoubleHasher(
-    s: String,
-    private var pow1: LongArray = LongArray(0),
-    private var pow2: LongArray = LongArray(0)
-) {
-    private val n = s.length
-    private val base1 = 131L
-    private val mod1 = 1_000_000_007L
-    private val base2 = 137L
-    private val mod2 = 1_000_000_009L
-
-    private val prefix1 = LongArray(n + 1)
-    private val prefix2 = LongArray(n + 1)
-    private val prefixRev1 = LongArray(n + 1)
-    private val prefixRev2 = LongArray(n + 1)
-
-    init {
-        if (pow1.size < n) pow1 = initPow(n, base1, mod1)
-        if (pow2.size < n) pow2 = initPow(n, base2, mod2)
-
-        for (i in 0 until n) {
-            prefix1[i + 1] = (prefix1[i] * base1 + s[i].code) % mod1
-            prefix2[i + 1] = (prefix2[i] * base2 + s[i].code) % mod2
-        }
-
-        for (i in n - 1 downTo 0) {
-            prefixRev1[n - i] = (prefixRev1[n - i - 1] * base1 + s[i].code) % mod1
-            prefixRev2[n - i] = (prefixRev2[n - i - 1] * base2 + s[i].code) % mod2
-        }
-    }
-
-    private fun initPow(maxLen: Int, base: Long, mod: Long): LongArray {
-        val pow = LongArray(maxLen + 1)
-        pow[0] = 1L
-        for (i in 0 until maxLen) {
-            pow[i + 1] = (pow[i] * base) % mod
-        }
-        return pow
-    }
-
-    // hash s[l..r]
-    fun getHash(l: Int, r: Int): Pair<Long, Long> {
-        val h1 = (prefix1[r + 1] - (prefix1[l] * pow1[r - l + 1]) % mod1 + mod1) % mod1
-        val h2 = (prefix2[r + 1] - (prefix2[l] * pow2[r - l + 1]) % mod2 + mod2) % mod2
-        return Pair(h1, h2)
-    }
-
-    // hash reverse s[l..r]
-    fun getHashRev(l: Int, r: Int): Pair<Long, Long> {
-        val rl = n - 1 - r
-        val rr = n - 1 - l
-        val h1 = (prefixRev1[rr + 1] - (prefixRev1[rl] * pow1[rr - rl + 1]) % mod1 + mod1) % mod1
-        val h2 = (prefixRev2[rr + 1] - (prefixRev2[rl] * pow2[rr - rl + 1]) % mod2 + mod2) % mod2
-        return Pair(h1, h2)
-    }
-}
-
 fun longestPalindrome(s: String, t: String): Int {
     val m = s.length
     val n = t.length
@@ -1117,6 +1060,7 @@ class CharDoubleHasher(
     }
 }
 
+
 fun minValidStrings(words: Array<String>, target: String): Int {
 
     val mod1 = 1_000_000_007L
@@ -1125,35 +1069,47 @@ fun minValidStrings(words: Array<String>, target: String): Int {
     val base2 = 137L
 
     val prefixes = mutableSetOf<Pair<Long, Long>>()
-    val prefixByLen = TreeMap<Int, MutableSet<Pair<Long, Long>>>()
     for (word in words) {
         var hash1 = 0L
         var hash2 = 0L
 
-        for ((i, c) in word.withIndex()) {
+        for (c in word) {
             hash1 = (hash1 * base1 + c.code) % mod1
             hash2 = (hash2 * base2 + c.code) % mod2
-            val pair = Pair(hash1, hash2)
-            prefixes.add(pair)
-            prefixByLen.getOrPut(i + 1) { mutableSetOf() }.add(pair)
+            prefixes.add(Pair(hash1, hash2))
         }
     }
 
     val maxLen = words.maxOf { it.length }
     val hasher = CharDoubleHasher(target)
+
     val n = target.length
     val dp = IntArray(n + 1) { Int.MAX_VALUE }
     dp[0] = 0
+    val tree = UpdateRangeSmallerSegmentTree(dp)
 
-    for (i in 1..n) {
-        for((len, set) in prefixByLen) {
-            if(len > i) break
-            val sub = hasher.getHash(i - len, i - 1)
-            if (sub in set && dp[i - len] != Int.MAX_VALUE) {
-                dp[i] = minOf(dp[i], dp[i - len] + 1)
+    for (i in 0 until n) {
+        dp[i] = tree.query(i, i)
+        if (dp[i] == Int.MAX_VALUE) continue
+        var l = i
+        var r = minOf(i + maxLen - 1, n - 1)
+        var j = -1
+        while (l <= r) {
+            val mid = (l + r) / 2
+            val hash = hasher.getHash(i, mid)
+            if (hash in prefixes) {
+                j = mid
+                l = mid + 1
+            } else {
+                r = mid - 1
             }
         }
+        if (j < 0) continue
+      //  println(target.subSequence(i, j + 1))
+        tree.updateRange(i + 1, j + 1, dp[i] + 1)
     }
+    dp[n] = tree.query(n, n)
+  //  println(dp.toList())
     return if (dp[n] == Int.MAX_VALUE) -1 else dp[n]
 }
 
