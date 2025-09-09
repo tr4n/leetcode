@@ -1232,7 +1232,56 @@ fun minimumCost(target: String, words: Array<String>, costs: IntArray): Int {
 
     return if (dp[n] == Int.MAX_VALUE) -1 else dp[n]
 }
+fun countCells(grid: Array<CharArray>, pattern: String): Int {
+    val m = grid.size
+    val n = grid[0].size
 
+    val total = m * n
+    val len = pattern.length
+
+    val patHash = DoubleHash().hash(pattern)
+
+
+    val sbH = StringBuilder(total)
+    for (r in 0 until m) for (c in 0 until n) sbH.append(grid[r][c])
+    val sH = sbH.toString()
+    val rh = DoubleRollingHash(sH)
+
+
+    val sbV = StringBuilder(total)
+    for (c in 0 until n) for (r in 0 until m) sbV.append(grid[r][c])
+    val sV = sbV.toString()
+    val rv = DoubleRollingHash(sV)
+
+    val horizCells = mutableSetOf<Pair<Int, Int>>()
+    val vertCells = mutableSetOf<Pair<Int, Int>>()
+
+
+    for (s in 0..total - len) {
+        if (rh.getHash(s, s + len - 1) == patHash) {
+            for (k in 0 until len) {
+                val idx = s + k
+                val row = idx / n
+                val col = idx % n
+                horizCells.add(row to col)
+            }
+        }
+    }
+
+
+    for (s in 0..total - len) {
+        if (rv.getHash(s, s + len - 1) == patHash) {
+            for (k in 0 until len) {
+                val idx = s + k
+                val col = idx / m
+                val row = idx % m
+                vertCells.add(row to col)
+            }
+        }
+    }
+
+    return horizCells.intersect(vertCells).size
+}
 
 
 fun main() {
