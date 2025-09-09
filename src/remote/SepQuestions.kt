@@ -700,13 +700,13 @@ fun peopleAwareOfSecret(n: Int, delay: Int, forget: Int): Int {
     return ans.toInt()
 }
 
-
 fun main() {
-    val builder = StringBuilder()
-    for (i in 1 until 50_000) {
-        builder.append('e')
-    }
+
     println(
-        peopleAwareOfSecret(6, 2, 4)
+        minimumCost(
+            "aaaaaaaaa",
+            arrayOf("a", "aaaaaaaa"),
+            intArrayOf(1, 1)
+        )
     )
 }

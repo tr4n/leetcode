@@ -1,5 +1,10 @@
 package remote
 
+import java.util.TreeMap
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.iterator
+
 class FreqHash(val base: Long = 131L) {
     private val pow = LongArray(26) { 1L }
     var hash: Long = 0
@@ -343,7 +348,7 @@ fun longestPrefix(s: String): String {
         }
     }
     println("$index")
-    return if (index < 0) "" else s.substring(0, index + 1)
+    return if (index < 0) "" else s.take(index + 1)
 }
 
 
@@ -1002,6 +1007,53 @@ fun beautifulIndices(s: String, a: String, b: String, k: Int): List<Int> {
     return result
 }
 
+class DoubleRollingHash(
+    s: String,
+    private val base1: Long = 131L,
+    private val mod1: Long = 1_000_000_007L,
+    private val base2: Long = 137L,
+    private val mod2: Long = 1_000_000_009L
+) {
+    private val n = s.length
+    private val prefix1 = LongArray(n + 1)
+    private val prefix2 = LongArray(n + 1)
+    private val pow1 = LongArray(n + 1)
+    private val pow2 = LongArray(n + 1)
+
+    init {
+        pow1[0] = 1
+        pow2[0] = 1
+        for (i in 1..n) {
+            pow1[i] = (pow1[i - 1] * base1) % mod1
+            pow2[i] = (pow2[i - 1] * base2) % mod2
+            prefix1[i] = (prefix1[i - 1] * base1 + s[i - 1].code) % mod1
+            prefix2[i] = (prefix2[i - 1] * base2 + s[i - 1].code) % mod2
+        }
+    }
+
+    fun getHash(l: Int, r: Int): Pair<Long, Long> {
+        val h1 = (prefix1[r + 1] - (prefix1[l] * pow1[r - l + 1]) % mod1 + mod1) % mod1
+        val h2 = (prefix2[r + 1] - (prefix2[l] * pow2[r - l + 1]) % mod2 + mod2) % mod2
+        return Pair(h1, h2)
+    }
+}
+
+class DoubleHash(
+    private val base1: Long = 131L,
+    private val mod1: Long = 1_000_000_007L,
+    private val base2: Long = 137L,
+    private val mod2: Long = 1_000_000_009L
+) {
+    fun hash(s: String): Pair<Long, Long> {
+        var h1 = 0L
+        var h2 = 0L
+        for (c in s) {
+            h1 = (h1 * base1 + c.code) % mod1
+            h2 = (h2 * base2 + c.code) % mod2
+        }
+        return Pair(h1, h2)
+    }
+}
 
 class CharDoubleHasher(
     s: String,
@@ -1105,16 +1157,86 @@ fun minValidStrings(words: Array<String>, target: String): Int {
             }
         }
         if (j < 0) continue
-      //  println(target.subSequence(i, j + 1))
+        //  println(target.subSequence(i, j + 1))
         tree.updateRange(i + 1, j + 1, dp[i] + 1)
     }
     dp[n] = tree.query(n, n)
-  //  println(dp.toList())
+    //  println(dp.toList())
     return if (dp[n] == Int.MAX_VALUE) -1 else dp[n]
 }
 
+fun deleteString(s: String): Int {
+    val n = s.length
+    val hasher = CharDoubleHasher(s)
+
+    val dp = IntArray(n) { Int.MIN_VALUE }
+    dp[0] = 1
+    for (i in 0 until n) {
+
+        for (len in 1..(n - i) / 2) {
+            val preHash = hasher.getHash(i, i + len - 1)
+            val forHash = hasher.getHash(i + len, i + 2 * len - 1)
+            if (preHash != forHash) continue
+            dp[i + len] = maxOf(dp[i] + 1, dp[i + len])
+        }
+    }
+    println(dp.toList())
+    return dp.max()
+}
+
+fun minimumTimeToInitialState(word: String, k: Int): Int {
+    val n = word.length
+    val hasher = CharDoubleHasher(word)
+
+    var cut = k
+    while (cut < n) {
+      //  println(word.substring(i))
+        val hashToEnd = hasher.getHash(cut, n - 1)
+        val prefixHash = hasher.getHash(0, n - 1 - cut)
+        if (hashToEnd == prefixHash) return cut / k
+        cut += k
+    }
+    return cut / k
+}
+
+fun minimumCost(target: String, words: Array<String>, costs: IntArray): Int {
+
+    val hashFactory = DoubleHash()
+    val hasher = DoubleRollingHash(target)
+
+    val wordsByLen = TreeMap<Int, MutableSet<Pair<Long, Long>>>()
+    val costsByHash = mutableMapOf<Pair<Long, Long>, Int>()
+    for (i in words.indices) {
+        val word = words[i]
+        val hash = hashFactory.hash(word)
+        wordsByLen.computeIfAbsent(word.length) { mutableSetOf() }.add(hash)
+        costsByHash[hash] = minOf(costsByHash[hash] ?: Int.MAX_VALUE, costs[i])
+    }
+
+
+    val n = target.length
+    val dp = IntArray(n + 1) { Int.MAX_VALUE }
+    dp[0] = 0
+
+    for (i in 0 until n) {
+        if (dp[i] == Int.MAX_VALUE) continue
+        val maxLen = n - i
+        for ((len, set) in wordsByLen.headMap(maxLen, true)) {
+            val j = i + len - 1
+            val hash = hasher.getHash(i, j)
+            if (hash !in set) continue
+            val cost = costsByHash[hash] ?: continue
+            dp[j + 1] = minOf(dp[j + 1], dp[i] + cost)
+        }
+    }
+
+    return if (dp[n] == Int.MAX_VALUE) -1 else dp[n]
+}
+
+
+
 fun main() {
     println(
-        minValidStrings(arrayOf("abc", "aaaaa", "bcdef"), "aabcdabc")
+        minimumTimeToInitialState("abacaba", 3)
     )
 }
