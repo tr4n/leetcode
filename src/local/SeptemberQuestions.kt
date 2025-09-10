@@ -939,6 +939,47 @@ fun spiralMatrixIII(rows: Int, cols: Int, rStart: Int, cStart: Int): Array<IntAr
     return result.toTypedArray()
 }
 
+fun numSub(s: String): Int {
+    val n = s.length
+    var maxLen = 0
+    var startIndex = -1
+
+    fun power(base: Long, exp: Long, modulus: Long): Long {
+        var res: Long = 1
+        var b = base % modulus
+
+        var e = exp
+        while (e > 0) {
+            if (e % 2 == 1L) {
+                res = (res * b) % modulus
+            }
+
+            b = (b * b) % modulus
+            e /= 2
+        }
+        return res
+    }
+    val mod = 1_000_000_007L
+    var total = 0L
+    for (i in 0 until n) {
+        if (s[i] == '0' && startIndex >= 0) {
+            val len = i - startIndex
+            total = (total + (len * (len + 1)) / 2) % mod
+            startIndex = -1
+            continue
+        }
+        if (s[i] == '1' && startIndex == -1) {
+            startIndex = i
+        }
+    }
+    if (startIndex >= 0) {
+        val len = n - startIndex
+        total = (total + (len * (len + 1)) / 2) % mod
+    }
+
+    return total.toInt()
+}
+
 fun main() {
 //    println(
 //        maxProduct(intArrayOf(9, 2, 19))

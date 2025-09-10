@@ -4,6 +4,7 @@ import java.util.TreeMap
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.iterator
+import kotlin.text.iterator
 
 class FreqHash(val base: Long = 131L) {
     private val pow = LongArray(26) { 1L }
@@ -1190,7 +1191,7 @@ fun minimumTimeToInitialState(word: String, k: Int): Int {
 
     var cut = k
     while (cut < n) {
-      //  println(word.substring(i))
+        //  println(word.substring(i))
         val hashToEnd = hasher.getHash(cut, n - 1)
         val prefixHash = hasher.getHash(0, n - 1 - cut)
         if (hashToEnd == prefixHash) return cut / k
@@ -1232,55 +1233,92 @@ fun minimumCost(target: String, words: Array<String>, costs: IntArray): Int {
 
     return if (dp[n] == Int.MAX_VALUE) -1 else dp[n]
 }
+
 fun countCells(grid: Array<CharArray>, pattern: String): Int {
     val m = grid.size
     val n = grid[0].size
-
     val total = m * n
     val len = pattern.length
+    if (len > total) return 0
 
-    val patHash = DoubleHash().hash(pattern)
+    val base1 = 131L
+    val mod1 = 1_000_000_007L
+    val base2 = 137L
+    val mod2 = 1_000_000_009L
+
+    val pow1 = LongArray(len) { 1 }
+    val pow2 = LongArray(len) { 1 }
+    for (i in 1 until len) {
+        pow1[i] = (pow1[i - 1] * base1) % mod1
+        pow2[i] = (pow2[i - 1] * base2) % mod2
+    }
+
+    // Pattern hash
+    var pat1 = 0L
+    var pat2 = 0L
+    for (c in pattern) {
+        pat1 = (pat1 * base1 + c.code) % mod1
+        pat2 = (pat2 * base2 + c.code) % mod2
+    }
 
 
-    val sbH = StringBuilder(total)
-    for (r in 0 until m) for (c in 0 until n) sbH.append(grid[r][c])
-    val sH = sbH.toString()
-    val rh = DoubleRollingHash(sH)
+    fun scan(isRow: Boolean, diff: IntArray) {
+        var h1 = 0L
+        var h2 = 0L
+        for (i in 0 until len) {
+            val (r, c) = if (isRow) i / n to i % n else i % m to i / m
+            h1 = (h1 * base1 + grid[r][c].code) % mod1
+            h2 = (h2 * base2 + grid[r][c].code) % mod2
+        }
+        if (h1 == pat1 && h2 == pat2) {
+            diff[0]++
+            diff[len]--
+        }
 
+        for (i in len until total) {
+            val (rOut, cOut) = if (isRow) (i - len) / n to (i - len) % n else (i - len) % m to (i - len) / m
+            h1 = (h1 - grid[rOut][cOut].code * pow1[len - 1] % mod1 + mod1) % mod1
+            h2 = (h2 - grid[rOut][cOut].code * pow2[len - 1] % mod2 + mod2) % mod2
 
-    val sbV = StringBuilder(total)
-    for (c in 0 until n) for (r in 0 until m) sbV.append(grid[r][c])
-    val sV = sbV.toString()
-    val rv = DoubleRollingHash(sV)
+            val (rIn, cIn) = if (isRow) i / n to i % n else i % m to i / m
+            h1 = (h1 * base1 + grid[rIn][cIn].code) % mod1
+            h2 = (h2 * base2 + grid[rIn][cIn].code) % mod2
 
-    val horizCells = mutableSetOf<Pair<Int, Int>>()
-    val vertCells = mutableSetOf<Pair<Int, Int>>()
-
-
-    for (s in 0..total - len) {
-        if (rh.getHash(s, s + len - 1) == patHash) {
-            for (k in 0 until len) {
-                val idx = s + k
-                val row = idx / n
-                val col = idx % n
-                horizCells.add(row to col)
+            if (h1 == pat1 && h2 == pat2) {
+                diff[i - len + 1]++
+                diff[i + 1]--
             }
         }
     }
 
+    val rowDiff = IntArray(total + 1)
+    val colDiff = IntArray(total + 1)
 
-    for (s in 0..total - len) {
-        if (rv.getHash(s, s + len - 1) == patHash) {
-            for (k in 0 until len) {
-                val idx = s + k
-                val col = idx / m
-                val row = idx % m
-                vertCells.add(row to col)
-            }
+    scan(true, rowDiff)
+    scan(false, colDiff)
+
+    var cnt = 0
+    val rowMark = BooleanArray(total)
+    for (i in 0 until total) {
+        cnt += rowDiff[i]
+        if (cnt > 0) rowMark[i] = true
+    }
+
+    cnt = 0
+    val colMark = BooleanArray(total)
+    for (i in 0 until total) {
+        cnt += colDiff[i]
+        if (cnt > 0) {
+            val col = i / m
+            val row = i % m
+            val id = row * n + col
+            colMark[id] = true
         }
     }
 
-    return horizCells.intersect(vertCells).size
+    var result = 0
+    for (id in 0 until total) if (rowMark[id] && colMark[id]) result++
+    return result
 }
 
 
