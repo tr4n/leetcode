@@ -1,5 +1,6 @@
 package remote
 
+import local.to2DIntArray
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -700,13 +701,38 @@ fun peopleAwareOfSecret(n: Int, delay: Int, forget: Int): Int {
     return ans.toInt()
 }
 
+fun minimumTeachings(n: Int, languages: Array<IntArray>, friendships: Array<IntArray>): Int {
+    val m = languages.size
+
+    val userLanguages = mutableListOf<Set<Int>>(emptySet())
+    for (list in languages) userLanguages.add(list.toSet())
+
+    val notConnected = friendships.filter { (u, v) ->
+        userLanguages[u].intersect(userLanguages[v]).isEmpty()
+    }
+    println(notConnected.map { it.toList() })
+    if (notConnected.isEmpty()) return 0
+
+    var minTeachings = m
+    for (i in 1..n) {
+        val teachSet = mutableSetOf<Int>()
+
+        for ((u, v) in notConnected) {
+            if (i !in userLanguages[u]) teachSet.add(u)
+            if (i !in userLanguages[v]) teachSet.add(v)
+        }
+        minTeachings = minOf(minTeachings, teachSet.size)
+    }
+    return minTeachings
+}
+
 fun main() {
 
     println(
-        minimumCost(
-            "aaaaaaaaa",
-            arrayOf("a", "aaaaaaaa"),
-            intArrayOf(1, 1)
+        minimumTeachings(
+            3,
+            "[[2],[1,3],[1,2],[3]]".to2DIntArray(),
+            "[[1,4],[1,2],[3,4],[2,3]]".to2DIntArray()
         )
     )
 }
