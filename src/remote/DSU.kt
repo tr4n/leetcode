@@ -570,6 +570,99 @@ fun minCostConnectPoints(points: Array<IntArray>): Int {
     return cost
 }
 
+fun minimumEffortPath(heights: Array<IntArray>): Int {
+    val rows = heights.size
+    val cols = heights[0].size
+    val dirX = intArrayOf(1, -1, 0, 0)
+    val dirY = intArrayOf(0, 0, 1, -1)
+
+    val pq = PriorityQueue<Triple<Int, Int, Int>>(compareBy { it.third })
+
+    val effortTo = Array(rows) { IntArray(cols) { Int.MAX_VALUE } }
+
+
+    effortTo[0][0] = 0
+    pq.add(Triple(0, 0, 0))
+
+    while (pq.isNotEmpty()) {
+        val (row, col, currentEffort) = pq.poll()
+
+        if (currentEffort > effortTo[row][col]) {
+            continue
+        }
+
+        if (row == rows - 1 && col == cols - 1) {
+            return currentEffort
+        }
+
+        for (i in 0 until 4) {
+            val x = row + dirX[i]
+            val y = col + dirY[i]
+
+            if (x !in 0 until rows || y !in 0 until cols) {
+                continue
+            }
+
+            val newEffort = maxOf(currentEffort, abs(heights[row][col] - heights[x][y]))
+
+            if (newEffort < effortTo[x][y]) {
+                effortTo[x][y] = newEffort
+                pq.add(Triple(x, y, newEffort))
+            }
+        }
+    }
+
+    return 0
+}
+
+fun minCost(n: Int, edges: Array<IntArray>, k: Int): Int {
+    val parent = IntArray(n) { it }
+    val cost = IntArray(n)
+    val size = IntArray(n) { 1 }
+    var count = n
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int, weight: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+        val newWeight = maxOf(cost[rootA], cost[rootB], weight)
+        if (rootA == rootB) return false
+        if (size[rootA] > size[rootB]) {
+            size[rootA] += size[rootB]
+            cost[rootA] = newWeight
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            cost[rootB] = newWeight
+            parent[rootA] = rootB
+        }
+        count--
+        return true
+    }
+
+    edges.sortBy { it[2] }
+    val usedEdges = mutableListOf<IntArray>()
+
+    for (edge in edges) {
+        if (union(edge[0], edge[1], edge[2])) {
+            usedEdges.add(edge)
+        }
+    }
+
+    while (count < k && usedEdges.isNotEmpty()) {
+        usedEdges.removeLast()
+        count++
+    }
+
+    return usedEdges.lastOrNull()?.getOrNull(2) ?: 0
+}
+
 fun main() {
     println(
         numSimilarGroups(
