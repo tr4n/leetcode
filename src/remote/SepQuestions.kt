@@ -1,6 +1,5 @@
 package remote
 
-import local.to2DIntArray
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -726,13 +725,58 @@ fun minimumTeachings(n: Int, languages: Array<IntArray>, friendships: Array<IntA
     return minTeachings
 }
 
+fun sortVowels(s: String): String {
+    val vowels = setOf('a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U')
+
+    val vowelCounts = IntArray(128)
+    for (char in s) {
+        if (char in vowels) {
+            vowelCounts[char.code]++
+        }
+    }
+
+    val sortedVowelChars = charArrayOf('A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u')
+    val queue = ArrayDeque<Char>()
+    for (c in sortedVowelChars) {
+        while (vowelCounts[c.code]-- > 0) {
+            queue.add(c)
+        }
+    }
+
+    val builder = StringBuilder()
+
+    for (ch in s) {
+        if (ch !in vowels) {
+            builder.append(ch)
+            continue
+        }
+        builder.append(queue.removeFirst())
+    }
+    return builder.toString()
+}
+
+fun buddyStrings(s1: String, s2: String): Boolean {
+    if (s1.length != s2.length) return false
+    if (s1 == s2) {
+        val distinctCount = s1.toSet().size
+        return distinctCount < s1.length
+    }
+    val diffIndices = mutableListOf<Int>()
+    for (i in s1.indices) {
+        if (s1[i] != s2[i]) {
+            diffIndices.add(i)
+        }
+    }
+
+    if (diffIndices.size != 2) return false
+    val i = diffIndices[0]
+    val j = diffIndices[1]
+    return s1[i] == s2[j] && s1[j] == s2[i]
+}
+
 fun main() {
 
     println(
-        minimumTeachings(
-            3,
-            "[[2],[1,3],[1,2],[3]]".to2DIntArray(),
-            "[[1,4],[1,2],[3,4],[2,3]]".to2DIntArray()
-        )
+        sortVowels("lEetcOde")
     )
 }
