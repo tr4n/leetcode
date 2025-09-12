@@ -663,6 +663,369 @@ fun minCost(n: Int, edges: Array<IntArray>, k: Int): Int {
     return usedEdges.lastOrNull()?.getOrNull(2) ?: 0
 }
 
+fun minMalwareSpread(graph: Array<IntArray>, initial: IntArray): Int {
+    val n = graph.size
+
+    val edges = Array(n) { mutableListOf<Int>() }
+    for (i in 0 until n) {
+        for (j in 0 until n) {
+            if (graph[i][j] == 1) {
+                edges[i].add(j)
+                edges[j].add(i)
+            }
+        }
+    }
+
+
+    fun dsu(exceptNode: Int): Int {
+        val parent = IntArray(n) { it }
+        val size = IntArray(n) { 1 }
+
+        fun find(u: Int): Int {
+            if (u == parent[u]) return u
+            val root = find(parent[u])
+            parent[u] = root
+            return root
+        }
+
+        fun union(a: Int, b: Int): Boolean {
+            val rootA = find(a)
+            val rootB = find(b)
+
+            if (rootA == rootB) return false
+            if (size[rootA] > size[rootB]) {
+                size[rootA] += size[rootB]
+                parent[rootB] = rootA
+            } else {
+                size[rootB] += size[rootA]
+                parent[rootA] = rootB
+            }
+            return true
+        }
+        for (u in 0 until n) {
+            if (u == exceptNode) continue
+            for (v in edges[u]) {
+                if (v == u || v == exceptNode) continue
+                union(u, v)
+            }
+        }
+        val groups = initial.filter { it != exceptNode }.map { find(it) }
+            .distinct()
+        //  println("Node $exceptNode: $groups, ${size.toList()}")
+        val result = groups.sumOf { size[it] }
+        //   .also { println("Remove $exceptNode: $it") }
+        return result
+    }
+
+    return initial.sorted().minBy { dsu(it) }
+}
+
+fun removeStones(stones: Array<IntArray>): Int {
+    val n = stones.size
+    val parent = IntArray(n) { it }
+    val size = IntArray(n) { 1 }
+    var count = n
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+
+        if (rootA == rootB) return false
+        if (size[rootA] > size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        count--
+        return true
+    }
+
+    val firstRow = mutableMapOf<Int, Int>()
+    val firstCol = mutableMapOf<Int, Int>()
+
+    for (i in stones.indices) {
+        val stone = stones[i]
+        val firstRowStone = firstRow[stone[0]]
+        if (firstRowStone == null) {
+            firstRow[stone[0]] = i
+        } else {
+            union(firstRowStone, i)
+        }
+        val firstColStone = firstCol[stone[1]]
+        if (firstColStone == null) {
+            firstCol[stone[1]] = i
+        } else {
+            union(firstColStone, i)
+        }
+    }
+
+    return n - count
+}
+
+fun largestComponentSize(nums: IntArray): Int {
+    val n = nums.max()
+    val present = BooleanArray(n + 1)
+    val parent = IntArray(n + 1) { it }
+    val size = IntArray(n + 1) { 1 }
+    var count = n
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+
+        if (rootA == rootB) return false
+        if (size[rootA] > size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        count--
+        return true
+    }
+
+    for (num in nums) present[num] = true
+
+    for (i in 2..n) {
+        var multiple = i
+
+        while (multiple <= n) {
+            if (present[multiple]) {
+                union(multiple, i)
+            }
+            multiple += i
+        }
+    }
+
+    return nums.groupBy { find(it) }.maxOf { it.value.size }
+}
+
+fun reachableNodes(n: Int, edges: Array<IntArray>, restricted: IntArray): Int {
+    val blockedNodes = restricted.toSet()
+    val graph = Array(n) { mutableListOf<Int>() }
+    for ((u, v) in edges) {
+        if (u in blockedNodes || v in blockedNodes) continue
+        graph[u].add(v)
+        graph[v].add(u)
+    }
+    val visited = BooleanArray(n)
+    var cnt = 0
+    fun dfs(node: Int) {
+        cnt++
+        visited[node] = true
+
+        for (v in graph[node]) {
+            if (!visited[v]) dfs(v)
+        }
+    }
+    dfs(0)
+    return cnt
+}
+
+fun minScore(n: Int, roads: Array<IntArray>): Int {
+    val parent = IntArray(n + 1) { it }
+    val score = IntArray(n + 1) { Int.MAX_VALUE }
+    val size = IntArray(n + 1) { 1 }
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int, distance: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+        val newScore = minOf(score[rootA], score[rootB], distance)
+        score[rootA] = newScore
+        score[rootB] = newScore
+        if (rootA == rootB) return false
+        if (size[rootA] > size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        return true
+    }
+
+    for (road in roads) {
+        union(road[0], road[1], road[2])
+    }
+
+    return score[find(1)]
+}
+
+fun gcdSort(nums: IntArray): Boolean {
+    val n = nums.max()
+    val present = BooleanArray(n + 1)
+    val parent = IntArray(n + 1) { it }
+    val size = IntArray(n + 1) { 1 }
+    var count = n
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+
+        if (rootA == rootB) return false
+        if (size[rootA] > size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        count--
+        return true
+    }
+
+    for (num in nums) present[num] = true
+
+    for (i in 2..n) {
+        var multiple = i
+
+        while (multiple <= n) {
+            if (present[multiple]) {
+                union(multiple, i)
+            }
+            multiple += i
+        }
+    }
+
+    val sortedNums = nums.sorted()
+
+    for (i in nums.indices) {
+        val originalNum = nums[i]
+        val sortedNum = sortedNums[i]
+        if (find(originalNum) != find(sortedNum)) {
+            return false
+        }
+    }
+    return true
+}
+
+fun friendRequests(n: Int, restrictions: Array<IntArray>, requests: Array<IntArray>): BooleanArray {
+
+    val parent = IntArray(n) { it }
+    val size = IntArray(n) { 1 }
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+
+        if (rootA == rootB) return false
+        if (size[rootA] > size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        return true
+    }
+
+    val ans = BooleanArray(requests.size)
+
+    for (i in requests.indices) {
+        val x = requests[i][0]
+        val y = requests[i][1]
+        val rx = find(x)
+        val ry = find(y)
+
+        if (rx == ry) {
+            ans[i] = true
+            continue
+        }
+
+        var conflict = false
+        for ((a, b) in restrictions) {
+            val ra = find(a)
+            val rb = find(b)
+            if ((ra == rx && rb == ry) || (ra == ry && rb == rx)) {
+                conflict = true
+                break
+            }
+        }
+
+        if (!conflict) {
+            union(rx, ry)
+            ans[i] = true
+        } else {
+            ans[i] = false
+        }
+    }
+    return ans
+}
+
+fun countPairs(n: Int, edges: Array<IntArray>): Long {
+    val parent = IntArray(n) { it }
+    val size = IntArray(n) { 1 }
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+
+        if (rootA == rootB) return false
+        if (size[rootA] > size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        return true
+    }
+
+    for ((a, b) in edges) union(a, b)
+    var total = 0L
+    for (i in 0 until n) {
+        if (i != parent[i]) continue
+        val x = size[i].toLong()
+        total += x * (n.toLong() - x)
+    }
+    return total / 2L
+}
+
 fun main() {
     println(
         numSimilarGroups(

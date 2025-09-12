@@ -774,6 +774,59 @@ fun buddyStrings(s1: String, s2: String): Boolean {
     return s1[i] == s2[j] && s1[j] == s2[i]
 }
 
+fun doesAliceWin(s: String): Boolean {
+    return s.any {
+        it == 'a' || it == 'e' || it == 'i' || it == 'o' || it == 'u'
+    }
+}
+
+fun swimInWater(grid: Array<IntArray>): Int {
+    val n = grid.size
+
+    val rows = n
+    val cols = n
+    val dirX = intArrayOf(1, -1, 0, 0)
+    val dirY = intArrayOf(0, 0, 1, -1)
+
+    val pq = PriorityQueue<Triple<Int, Int, Int>>(compareBy { it.third })
+
+    val effortTo = Array(rows) { IntArray(cols) { Int.MAX_VALUE } }
+
+
+    effortTo[0][0] = grid[0][0]
+    pq.add(Triple(0, 0, grid[0][0]))
+
+    while (pq.isNotEmpty()) {
+        val (row, col, currentEffort) = pq.poll()
+
+        if (currentEffort > effortTo[row][col]) {
+            continue
+        }
+
+        if (row == rows - 1 && col == cols - 1) {
+            return currentEffort
+        }
+
+        for (i in 0 until 4) {
+            val x = row + dirX[i]
+            val y = col + dirY[i]
+
+            if (x !in 0 until rows || y !in 0 until cols) {
+                continue
+            }
+
+            val newEffort = maxOf(currentEffort, grid[x][y])
+
+            if (newEffort < effortTo[x][y]) {
+                effortTo[x][y] = newEffort
+                pq.add(Triple(x, y, newEffort))
+            }
+        }
+    }
+
+    return 0
+}
+
 fun main() {
 
     println(
