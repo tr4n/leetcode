@@ -169,6 +169,59 @@ fun splitListToParts(head: ListNode?, k: Int): Array<ListNode?> {
     }
 }
 
+fun addTwoNumbers(l1: ListNode?, l2: ListNode?): ListNode? {
+//    var first: ListNode? = null
+//    var second: ListNode? = null
+//    var a = l1
+//    while (a != null){
+//        val node = ListNode(a.`val`)
+//        node.next = first
+//        first = node
+//        a = a.next
+//    }
+//
+//    var b = l2
+//    while (b != null){
+//        val node = ListNode(b.`val`)
+//        node.next = second
+//        second = node
+//        b = b.next
+//    }
+//
+//    var result: ListNode? = null
+//    var carry = 0
+//
+//    while (first != null || second != null || carry > 0) {
+//        val x = first?.`val` ?: 0
+//        val y = second?.`val` ?: 0
+//        val value = x + y + carry
+//        carry = value / 10
+//        val node = ListNode(value % 10)
+//        node.next = result
+//        first = first?.next
+//        second = second?.next
+//        result = node
+//    }
+//    return result
+    var first: ListNode? = l1
+    var second: ListNode? = l2
+    val root = ListNode(0)
+    var result: ListNode? = root
+    var carry = 0
+
+    while (first != null || second != null || carry > 0) {
+        val x = first?.`val` ?: 0
+        val y = second?.`val` ?: 0
+        val value = x + y + carry
+        carry = value / 10
+        val node = ListNode(value % 10)
+        result?.next = node
+        result = result?.next
+        first = first?.next
+        second = second?.next
+    }
+    return root.next
+}
 
 fun main() {
     println(

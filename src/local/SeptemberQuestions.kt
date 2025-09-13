@@ -1,9 +1,9 @@
 package local
 
-import remote.print
 import java.util.PriorityQueue
 import java.util.Stack
 import java.util.TreeMap
+import java.util.TreeSet
 import kotlin.math.cbrt
 import kotlin.math.sqrt
 
@@ -959,6 +959,7 @@ fun numSub(s: String): Int {
         }
         return res
     }
+
     val mod = 1_000_000_007L
     var total = 0L
     for (i in 0 until n) {
@@ -980,12 +981,94 @@ fun numSub(s: String): Int {
     return total.toInt()
 }
 
+fun findMinFibonacciNumbers(k: Int): Int {
+    if (k <= 3) return 1
+    val fNums = TreeSet<Int>()
+    fNums.add(1)
+    fNums.add(2)
+    fNums.add(3)
+    var a = 2
+    var b = 3
+    while (b < k) {
+        val num = a + b
+        if (num == k) return 1
+        fNums.add(num)
+        a = b
+        b = num
+    }
+
+    fun dp(num: Int): Int {
+        if (num < 0) return Int.MAX_VALUE
+        if (num in fNums) return 1
+        val lower = fNums.lower(num) ?: return Int.MAX_VALUE
+        return 1 + dp(num - lower)
+    }
+
+    return dp(k)
+}
+
+fun complexNumberMultiply(num1: String, num2: String): String {
+    val (a1, b1) = num1.substringBeforeLast('i').split('+').map { it.toInt() }
+    val (a2, b2) = num2.substringBeforeLast('i').split('+').map { it.toInt() }
+    return "${a1 * a2 - b1 * b2}+${a1 * b2 + a2 * b1}i"
+}
+
+fun integerBreak(n: Int): Int {
+    if (n == 2) return 1
+    if (n == 3) return 2
+    if (n == 4) return 4
+
+    var k = 2
+    var ans = 1
+    while (true) {
+        val num = n / k
+        if (num <= 1) return ans
+        val r = n % k
+        var p = 1
+        for (i in 0 until r) p *= (num + 1)
+        for (i in 0 until (k - r)) p *= num
+        ans = maxOf(ans, p)
+        k++
+    }
+    return -1
+}
+
+fun optimalDivision(nums: IntArray): String {
+    val n = nums.size
+    if (n == 2) return "${nums[0]}/${nums[1]}"
+
+    val builder = StringBuilder()
+    builder.append("${nums[0]}/(")
+
+    for (i in 1 until n - 1) {
+        builder.append("${nums[i]}/")
+    }
+    builder.append("${nums[n - 1]})")
+    return builder.toString()
+}
+
+fun maxFreqSum(s: String): Int {
+    val freq = s.groupingBy { it }.eachCount().toList().sortedByDescending { it.second }
+    var a = 0
+    var b = 0
+    for ((ch, cnt) in freq) {
+        val isVowel = ch == 'a' || ch == 'e' || ch == 'i' || ch == 'o' || ch == 'u'
+        if (isVowel) {
+            if (a == 0) a = cnt
+        } else {
+            if (b == 0) b = cnt
+        }
+        if(a > 0  && b > 0) return a + b
+    }
+    return a + b
+}
+
 fun main() {
 //    println(
 //        maxProduct(intArrayOf(9, 2, 19))
 //    )
     println(
-        spiralMatrixIII(5, 6, 1, 4).print()
+        findMinFibonacciNumbers(1_000_000_000)
 
     )
 }
