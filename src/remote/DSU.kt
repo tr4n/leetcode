@@ -1,5 +1,6 @@
 package remote
 
+import local.to2DIntArray
 import java.util.*
 import kotlin.math.abs
 
@@ -1026,22 +1027,262 @@ fun countPairs(n: Int, edges: Array<IntArray>): Long {
     return total / 2L
 }
 
+fun lexicographicallySmallestArray(nums: IntArray, limit: Int): IntArray {
+    val n = nums.size
+
+    val result = IntArray(n) { nums[it] }
+    nums.sort()
+    var group = -1
+    val groups = mutableListOf<MutableList<Int>>()
+    val numToGroup = mutableMapOf<Int, Int>()
+    var prev = Int.MIN_VALUE
+
+    for (num in nums) {
+        if (prev < 0 || num - prev > limit) {
+            group++
+            groups.add(mutableListOf(num))
+        } else {
+            groups[group].add(num)
+        }
+        prev = num
+        numToGroup[num] = group
+    }
+
+    groups.onEach { it.sortDescending() }
+    // println(result.toList())
+    // println(groups)
+    for (i in 0 until n) {
+        val num = result[i]
+        val groupId = numToGroup[num] ?: continue
+        val smaller = groups[groupId].removeLastOrNull() ?: continue
+
+        result[i] = smaller
+    }
+    return result
+}
+
+fun minimumCost(n: Int, edges: Array<IntArray>, query: Array<IntArray>): IntArray {
+    val parent = IntArray(n) { it }
+    val size = IntArray(n) { 1 }
+    val cost = IntArray(n) { -1 }
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int, w: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+        val newWeight = cost[rootA] and cost[rootB] and w
+        cost[rootA] = newWeight
+        cost[rootB] = newWeight
+
+        if (rootA == rootB) return false
+        if (size[rootA] > size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        return true
+    }
+
+    for (edge in edges) union(edge[0], edge[1], edge[2])
+
+    val result = IntArray(query.size) {
+        val (start, end) = query[it]
+        val rootA = find(start)
+        val rootB = find(end)
+        if (rootA != rootB) -1 else cost[rootA]
+    }
+    return result
+}
+
+fun magnificentSets(n: Int, edges: Array<IntArray>): Int {
+    val parent = IntArray(n + 1) { it }
+    val size = IntArray(n + 1) { 1 }
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+
+        if (rootA == rootB) return false
+        if (size[rootA] >= size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        return true
+    }
+
+    val graph = Array(n + 1) { mutableListOf<Int>() }
+    for ((u, v) in edges) {
+        graph[u].add(v)
+        graph[v].add(u)
+        union(u, v)
+    }
+
+    fun bfs(start: Int): Int {
+        val ranks = IntArray(n + 1) { -1 }
+        val queue = ArrayDeque<Int>()
+        ranks[start] = 1
+        queue.add(start)
+
+        var maxDepth = 1
+        while (queue.isNotEmpty()) {
+            val u = queue.removeFirst()
+            maxDepth = maxOf(maxDepth, ranks[u])
+
+            for (v in graph[u]) {
+                if (ranks[v] >= 0) {
+                    if (abs(ranks[v] - ranks[u]) % 2 == 0) return Int.MIN_VALUE
+                    continue
+                }
+                ranks[v] = ranks[u] + 1
+                queue.add(v)
+            }
+        }
+
+        return maxDepth
+    }
+
+
+    val groups = (1..n).groupBy { find(it) }
+    var total = 0
+    for (group in groups.values) {
+        var maxDepth = -1
+        for (node in group) {
+            val depth = bfs(node)
+            if (depth < 0) return -1
+            maxDepth = maxOf(maxDepth, depth)
+        }
+        total += maxDepth
+    }
+
+    return total
+}
+
+fun maxPoints(grid: Array<IntArray>, queries: IntArray): IntArray {
+    val m = grid.size
+    val n = grid[0].size
+    val dirX = intArrayOf(0, 0, 1, -1)
+    val dirY = intArrayOf(-1, 1, 0, 0)
+
+    val queryList = queries.withIndex().sortedBy { it.value }
+    val result = IntArray(queryList.size)
+
+    val pq = PriorityQueue<Pair<Int, Int>>(compareBy { grid[it.first][it.second] })
+    pq.add(0 to 0)
+
+    val visited = Array(m) { BooleanArray(n) }
+    visited[0][0] = true
+
+    var queryIndex = 0
+    var cnt = 0
+
+    while (queryIndex < queryList.size) {
+        val query = queryList[queryIndex]
+        val threshold = query.value
+        while (pq.isNotEmpty() && grid[pq.peek().first][pq.peek().second] < threshold) {
+            if (pq.isEmpty()) break
+            val (row, col) = pq.peek()
+
+            pq.poll()
+            cnt++
+
+            for (i in 0 until 4) {
+                val x = row + dirX[i]
+                val y = col + dirY[i]
+                if (x !in 0 until m || y !in 0 until n) continue
+                if (visited[x][y]) continue
+                visited[x][y] = true
+                pq.add(x to y)
+            }
+        }
+        result[query.index] = cnt
+        queryIndex++
+    }
+
+    return result
+}
+
+fun processQueries(c: Int, connections: Array<IntArray>, queries: Array<IntArray>): IntArray {
+    val parent = IntArray(c + 1) { it }
+    val size = IntArray(c + 1) { 1 }
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+
+        if (rootA == rootB) return false
+        if (size[rootA] >= size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        return true
+    }
+
+    for ((u, v) in connections) {
+        union(u, v)
+    }
+
+    val map = mutableMapOf<Int, TreeSet<Int>>()
+
+    for (i in 1..c) {
+        val group = parent[i]
+        map.computeIfAbsent(group) { TreeSet() }.add(i)
+    }
+
+    val ans = mutableListOf<Int>()
+    for (query in queries) {
+        val x = query[1]
+        val group = parent[x]
+        if (query[0] == 2) {
+            //  println("Remove $x")
+            map[group]?.remove(x)
+            continue
+        }
+        // println("Query $x, ${map[group]}")
+        val list = map[group] ?: emptyList()
+        if (list.contains(x)) {
+            ans.add(x)
+            continue
+        }
+        ans.add(list.firstOrNull() ?: -1)
+    }
+    return ans.toIntArray()
+}
+
 fun main() {
     println(
-        numSimilarGroups(
-            arrayOf(
-                "kccomwcgcs",
-                "socgcmcwkc",
-                "sgckwcmcoc",
-                "coswcmcgkc",
-                "cowkccmsgc",
-                "cosgmccwkc",
-                "sgmkwcccoc",
-                "coswmccgkc",
-                "kowcccmsgc",
-                "kgcomwcccs"
-            )
-        )
+        processQueries(
+            5,
+            "[[1,2],[2,3],[3,4],[4,5]]".to2DIntArray(),
+            "[[1,3],[2,1],[1,1],[2,2],[1,2]]".to2DIntArray()
+        ).toList()
     )
 
 }
