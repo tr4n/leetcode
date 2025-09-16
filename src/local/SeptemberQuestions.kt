@@ -1058,9 +1058,71 @@ fun maxFreqSum(s: String): Int {
         } else {
             if (b == 0) b = cnt
         }
-        if(a > 0  && b > 0) return a + b
+        if (a > 0 && b > 0) return a + b
     }
+    val n = 1
     return a + b
+}
+
+fun spellchecker(wordlist: Array<String>, queries: Array<String>): Array<String> {
+    val vowerSet = setOf('a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U')
+    val originalList = wordlist.toSet()
+    fun lowerWord(word: String): String {
+        val builder = StringBuilder()
+        for (c in word) {
+            if (c in vowerSet) {
+                builder.append('_')
+            } else {
+                builder.append(c.lowercaseChar())
+            }
+        }
+        return builder.toString()
+    }
+
+    val capCorrect = mutableMapOf<String, String>()
+    val vowelCorrect = mutableMapOf<String, String>()
+
+    for (word in wordlist) {
+        val lowercase = word.lowercase()
+        if (capCorrect[lowercase] == null) capCorrect[lowercase] = word
+        val correctVowels = lowerWord(word)
+        if (vowelCorrect[correctVowels] == null) vowelCorrect[correctVowels] = word
+    }
+
+    return Array(queries.size) {
+        val query = queries[it]
+        if (query in originalList) return@Array query
+        capCorrect[query.lowercase()] ?: vowelCorrect[lowerWord(query)] ?: ""
+    }
+}
+
+fun countStableSubsequences(nums: IntArray): Int {
+    val mod = 1_000_000_007
+    var endWith0 = 0L
+    var endWith00 = 0L
+    var endWith1 = 0L
+    var endWith11 = 0L
+    val n = nums.size
+
+    for (i in 0 until n) {
+        val num = nums[i] % 2
+        if (num == 0) {
+            val newEndWith00 = endWith0
+            val newEndWith0 = 1L + endWith1 + endWith11
+            endWith0 += newEndWith0
+            endWith00 += newEndWith00
+        } else {
+            val newEndWith11 = endWith0
+            val newEndWith1 = 1L + endWith00 + endWith0
+            endWith1 += newEndWith1
+            endWith11 += newEndWith11
+        }
+        endWith0 %= mod
+        endWith00 %= mod
+        endWith1 %= mod
+        endWith11 %= mod
+    }
+    return ((endWith0 + endWith00 + endWith1 + endWith11) % mod).toInt()
 }
 
 fun main() {
