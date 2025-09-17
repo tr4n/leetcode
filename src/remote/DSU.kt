@@ -1529,56 +1529,69 @@ fun hasValidPath(grid: Array<IntArray>): Boolean {
     val m = grid.size
     val n = grid[0].size
 
-    fun getNext(r: Int, c: Int): List<Pair<Int, Int>> {
-        val dirs = mapOf(
-            1 to listOf(0 to -1, 0 to 1),
-            2 to listOf(-1 to 0, 1 to 0),
-            3 to listOf(0 to -1, 1 to 0),
-            4 to listOf(0 to 1, 1 to 0),
-            5 to listOf(0 to -1, 0 to -1),
-            6 to listOf(0 to 1, 0 to -1)
-        )
+    val dirs = mapOf(
+        1 to listOf(0 to -1, 0 to 1),   // Left, Right
+        2 to listOf(-1 to 0, 1 to 0),   // Up, Down
+        3 to listOf(0 to -1, 1 to 0),   // Left, Down
+        4 to listOf(0 to 1, 1 to 0),    // Right, Down
+        5 to listOf(0 to -1, 0 to -1),  // Left, Up (fix: should be (-1,0) Up, (0,-1) Left)
+        5 to listOf(-1 to 0, 0 to -1),  // corrected
+        6 to listOf(-1 to 0, 0 to 1)    // Up, Right
+    )
 
-        fun isConnectedBack(d: Pair<Int, Int>, nr: Int, nc: Int): Boolean {
-            val opposite = (-d.first to -d.second)
-            val nextType = grid[nr][nc]
-            val nextDirs = dirs[nextType] ?: emptyList()
-            return opposite in nextDirs
-        }
+    val opposite = mapOf(
+        (0 to -1) to (0 to 1),   // Left ↔ Right
+        (0 to 1) to (0 to -1),
+        (-1 to 0) to (1 to 0),   // Up ↔ Down
+        (1 to 0) to (-1 to 0)
+    )
 
-        val type = grid[r][c]
-        val res = mutableListOf<Pair<Int, Int>>()
-        for ((dr, dc) in dirs[type] ?: emptyList()) {
-            val nr = r + dr
-            val nc = c + dc
-            if (nr in 0 until m && nc in 0 until n) {
-                if (isConnectedBack(dr to dc, nr, nc)) {
-                    res.add(nr to nc)
+    val graph = mutableMapOf<Int, MutableList<Int>>()
+
+    for (i in 0 until m) {
+        for (j in 0 until n) {
+            val id = i * n + j
+            graph.computeIfAbsent(id) { mutableListOf() }
+
+            val dlist = dirs[grid[i][j]] ?: emptyList()
+            for ((dx, dy) in dlist) {
+                val x = i + dx
+                val y = j + dy
+                if (x !in 0 until m || y !in 0 until n) continue
+
+                val nid = x * n + y
+                val ndirs = dirs[grid[x][y]] ?: emptyList()
+                if (opposite[dx to dy] in ndirs) {
+                    graph[id]?.add(nid)
                 }
             }
         }
-        return res
     }
 
-    val memo = Array(m) { BooleanArray(n) }
-    memo[m - 1][n - 1] = true
-    fun dfs(row: Int, col: Int): Boolean {
-        if (row == m - 1 && col == n - 1) return true
-        if (memo[row][col]) return true
 
-        val nextList = getNext(row, col)
+    val target = (m - 1) * n + n - 1
+    val memo = BooleanArray(m * n)
+    memo[target] = true
+    val visited = BooleanArray(m * n)
+
+    fun dfs(id: Int): Boolean {
+        if (id == target) return true
+        if (memo[id]) return true
+        visited[id] = true
+        val nextList = graph[id] ?: emptyList()
         var result = false
-        for ((x, y) in nextList) {
-            if (dfs(x, y)) {
+        for (nextId in nextList) {
+            if (!visited[nextId] && dfs(nextId)) {
                 result = true
                 break
             }
         }
-        memo[row][col] = result
+        memo[id] = result
         return result
     }
-    return dfs(0, 0)
+    return dfs(0)
 }
+
 
 fun findAllPeople(n: Int, meetings: Array<IntArray>, firstPerson: Int): List<Int> {
     val parent = IntArray(n) { it }
@@ -1611,22 +1624,396 @@ fun findAllPeople(n: Int, meetings: Array<IntArray>, firstPerson: Int): List<Int
         return true
     }
 
-    meetings.groupBy { it[3] }
-    union(0, firstPerson)
-    val edges = meetings.withIndex().sortedWith(compareBy<IndexedValue<IntArray>> { it.value[2] }.thenBy { it.index })
-    println(edges.map { it.value.toList() })
-    for (meeting in edges) {
-        val (a, b) = meeting.value
-        val secret = find(0)
-        if (find(a) == secret || find(b) == secret) union(a, b)
+    fun reset(u: Int) {
+        parent[u] = u
+        size[u] = 1
     }
-    val group = find(0)
-    return (0 until n).filter { find(it) == group }
+
+    union(0, firstPerson)
+    val timeMeetings = meetings.groupBy { it[2] }.toSortedMap()
+
+
+    for ((_, list) in timeMeetings) {
+        val joined = mutableSetOf<Int>()
+
+        for (meeting in list) {
+            val a = meeting[0]
+            val b = meeting[1]
+            union(a, b)
+            joined.add(a)
+            joined.add(b)
+        }
+        val secretRoot = find(0)
+        for (u in joined) if (find(u) != secretRoot) reset(u)
+    }
+    val secretRoot = find(0)
+    return (0 until n).filter { find(it) == secretRoot }
+}
+
+fun maximumSegmentSum(nums: IntArray, removeQueries: IntArray): LongArray {
+    val n = nums.size
+    val parent = IntArray(n) { it }
+    val size = IntArray(n) { 1 }
+    val sum = LongArray(n) { nums[it].toLong() }
+
+    var count = n
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+
+        if (rootA == rootB) {
+            return false
+        }
+        if (size[rootA] >= size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+            sum[rootA] += sum[rootB]
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+            sum[rootB] += sum[rootA]
+        }
+        count--
+        return true
+    }
+
+    var maxSum = 0L
+    val m = removeQueries.size
+    val result = LongArray(m)
+    val activeIndexes = BooleanArray(n)
+
+    for (q in (m - 1) downTo 0) {
+        //  println(sum.toList())
+        result[q] = maxSum
+        val i = removeQueries[q]
+
+        if (i > 0 && activeIndexes[i - 1]) union(i - 1, i)
+        if (i < n - 1 && activeIndexes[i + 1]) union(i + 1, i)
+        activeIndexes[i] = true
+        val root = find(i)
+        maxSum = maxOf(maxSum, sum[root])
+    }
+    return result
+}
+
+
+fun latestDayToCross(row: Int, col: Int, cells: Array<IntArray>): Int {
+    val n = row * col
+    val parent = IntArray(n + 2) { it }
+    val size = IntArray(n + 2) { 1 }
+    val topNode = n
+    val bottomNode = n + 1
+
+    val activeCells = BooleanArray(n)
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+
+        if (rootA == rootB) {
+            return false
+        }
+        if (size[rootA] >= size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        return true
+    }
+
+    val dirX = intArrayOf(1, -1, 0, 0)
+    val dirY = intArrayOf(0, 0, 1, -1)
+
+    fun isCrossable(): Boolean = find(topNode) == find(bottomNode)
+    fun toId(r: Int, c: Int) = r * col + c
+
+    var i = cells.size - 1
+    while (i >= 0) {
+        val r = cells[i][0] - 1
+        val c = cells[i][1] - 1
+        val id = toId(r, c)
+        activeCells[id] = true
+        if (r == 0) union(id, topNode)
+        if (r == row - 1) union(id, bottomNode)
+
+        for (j in 0 until 4) {
+            val x = r + dirX[j]
+            val y = c + dirY[j]
+            if (x !in 0 until row || y !in 0 until col) continue
+            val nextId = toId(x, y)
+            if (!activeCells[nextId]) continue
+            union(id, nextId)
+        }
+        if (isCrossable()) return i
+        i--
+    }
+    return 0
+}
+
+fun distanceLimitedPathsExist(n: Int, edgeList: Array<IntArray>, queries: Array<IntArray>): BooleanArray {
+    val parent = IntArray(n + 2) { it }
+    val size = IntArray(n + 2) { 1 }
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+
+        if (rootA == rootB) {
+            return false
+        }
+        if (size[rootA] >= size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        return true
+    }
+
+    edgeList.sortBy { it[2] }
+    val queryList = queries.withIndex().sortedBy { it.value[2] }
+
+    val result = BooleanArray(queries.size)
+    var edgeId = 0
+    for ((index, query) in queryList) {
+        val (u, v, limit) = query
+
+        while (edgeId < edgeList.size && edgeList[edgeId][2] < limit) {
+            union(edgeList[edgeId][0], edgeList[edgeId][1])
+            edgeId++
+        }
+        result[index] = find(u) == find(v)
+    }
+    return result
+}
+
+fun minimumHammingDistance(source: IntArray, target: IntArray, allowedSwaps: Array<IntArray>): Int {
+    val n = source.size
+    val parent = IntArray(n) { it }
+    val size = IntArray(n) { 1 }
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+
+        if (rootA == rootB) {
+            return false
+        }
+        if (size[rootA] >= size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        return true
+    }
+
+    for ((a, b) in allowedSwaps) {
+        union(a, b)
+    }
+
+    val groups = mutableMapOf<Int, MutableList<Int>>()
+
+    for (i in 0 until n) {
+        val root = find(i)
+        groups.computeIfAbsent(root) { mutableListOf() }.add(i)
+    }
+
+    var ans = 0
+    for (indices in groups.values) {
+        val freq = mutableMapOf<Int, Int>()
+
+        for (i in indices) {
+            freq[source[i]] = freq.getOrDefault(source[i], 0) + 1
+        }
+
+        for (i in indices) {
+            val v = target[i]
+            val f = freq.getOrDefault(v, 0)
+            if (f > 0) {
+                freq[v] = f - 1
+            } else {
+                ans++
+            }
+        }
+    }
+    return ans
+}
+
+fun areConnected(n: Int, threshold: Int, queries: Array<IntArray>): List<Boolean> {
+    val parent = IntArray(n + 1) { it }
+    val size = IntArray(n + 1) { 1 }
+    var count = n
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+
+        if (rootA == rootB) return false
+        if (size[rootA] > size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        count--
+        return true
+    }
+
+    for (i in (threshold + 1)..n) {
+        var multiple = i
+
+        while (multiple <= n) {
+            union(multiple, i)
+            multiple += i
+        }
+    }
+
+    return List(queries.size) {
+        val (a, b) = queries[it]
+        find(a) == find(b)
+    }
+}
+
+fun maxNumEdgesToRemove(n: Int, edges: Array<IntArray>): Int {
+    val parent = Array(n + 1) { node -> IntArray(3) { node } }
+    val size = Array(n + 1) { IntArray(3) { 1 } }
+    val count = IntArray(3) { n }
+
+    fun find(type: Int, u: Int): Int {
+        if (u == parent[u][type]) return u
+        val root = find(type, parent[u][type])
+        parent[u][type] = root
+        return root
+    }
+
+    fun union(type: Int, a: Int, b: Int): Boolean {
+        var rootA = find(type, a)
+        var rootB = find(type, b)
+
+        if (rootA == rootB) return false
+        if (size[rootA][type] < size[rootB][type]) {
+            val tmp = rootA
+            rootA = rootB
+            rootB = tmp
+        }
+        parent[rootB][type] = rootA
+        size[rootA][type] += size[rootB][type]
+        count[type]--
+        return true
+    }
+
+    edges.sortByDescending { it[0] }
+
+    var ans = 0
+    for ((type, u, v) in edges) {
+        val sameA = find(1, u) == find(1, v)
+        val sameB = find(2, u) == find(2, v)
+        //  println("$u $v $sameA $sameB")
+        if ((type == 3 && sameA && sameB) || (type == 1 && sameA) || (type == 2 && sameB)) {
+            ans++
+            continue
+        }
+        if (type == 1 || type == 3) {
+            union(1, u, v)
+        }
+        if (type == 2 || type == 3) {
+            union(2, u, v)
+        }
+    }
+
+    //   println(count.toList())
+    return if (count[1] == 1 && count[2] == 1) ans else -1
+}
+
+fun containsCycle(grid: Array<CharArray>): Boolean {
+    val m = grid.size
+    val n = grid[0].size
+
+    val dirX = intArrayOf(1, -1, 0, 0)
+    val dirY = intArrayOf(0, 0, 1, -1)
+    val visited = Array(m) { IntArray(n) }
+
+    fun dfs(r: Int, c: Int, visitTime: Int, ch: Char): Boolean {
+        if (r !in 0 until m || c !in 0 until n) return false
+        if (grid[r][c] != ch) return false
+        val lastVisit = visitTime - 1
+        for (i in 0 until 4) {
+            val x = r + dirX[i]
+            val y = c + dirY[i]
+            if (x !in 0 until m || y !in 0 until n) continue
+            if (grid[x][y] != ch) continue
+
+            when(visited[x][y]) {
+                0 -> {
+                    visited[x][y] = visitTime + 1
+                    if (dfs(x, y, visitTime + 1, ch)) {
+                        return true
+                    }
+                }
+                in 1 until lastVisit -> return true
+            }
+        }
+        return false
+    }
+
+    for (i in 0 until m) {
+        for (j in 0 until n) {
+            if (visited[i][j] == 0) {
+                visited[i][j] = 1
+                if (dfs(i, j, 1, grid[i][j])) {
+                    return true
+                }
+            }
+        }
+    }
+    return false
 }
 
 fun main() {
     println(
-        findAllPeople(5, "[[1,4,3],[0,4,3]]".to2DIntArray(), 3)
+        maxNumEdgesToRemove(4, "[[3,1,2],[3,2,3],[1,1,3],[1,2,4],[1,1,2],[2,3,4]]".to2DIntArray())
     )
 
 }
