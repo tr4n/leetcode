@@ -2040,24 +2040,25 @@ fun hitBricks(grid: Array<IntArray>, hits: Array<IntArray>): IntArray {
         size[rootA] += size[rootB]
     }
 
-    val hitBlocks = hits.map { toId(it[0], it[1]) }.toSet()
+    for ((r, c) in hits) {
+        grid[r][c] = if (grid[r][c] == 1) 0 else -1
+    }
     val dirX = intArrayOf(-1, 1, 0, 0)
     val dirY = intArrayOf(0, 0, -1, 1)
 
     for (i in 0 until rows) {
         for (j in 0 until cols) {
+            if (grid[i][j] != 1) continue
             val id = toId(i, j)
-            if (grid[i][j] != 1 || id in hitBlocks) continue
-
             if (i == 0) union(id, topNode)
 
             for (k in 0 until 4) {
                 val x = i + dirX[k]
                 val y = j + dirY[k]
                 if (x !in 0 until rows || y !in 0 until cols) continue
-                val idx = toId(x, y)
-                if (grid[x][y] != 1 || idx in hitBlocks) continue
-                union(id, idx)
+                if (grid[x][y] != 1) continue
+                val adjId = toId(x, y)
+                union(id, adjId)
             }
         }
     }
@@ -2065,13 +2066,12 @@ fun hitBricks(grid: Array<IntArray>, hits: Array<IntArray>): IntArray {
     val result = IntArray(hits.size)
     var count = size[find(topNode)]
 
-    for (i in (hits.size -1) downTo 0) {
+    for (i in (hits.size - 1) downTo 0) {
         val r = hits[i][0]
         val c = hits[i][1]
-        if (grid[r][c] == 0) continue
-
-        val id = toId(r, c)
+        if (grid[r][c] == -1) continue
         grid[r][c] = 1
+        val id = toId(r, c)
 
         if (r == 0) union(id, topNode)
         for (k in 0 until 4) {
