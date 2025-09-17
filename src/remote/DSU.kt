@@ -1252,14 +1252,14 @@ fun processQueries(c: Int, connections: Array<IntArray>, queries: Array<IntArray
     val map = mutableMapOf<Int, TreeSet<Int>>()
 
     for (i in 1..c) {
-        val group = parent[i]
+        val group = find(i)
         map.computeIfAbsent(group) { TreeSet() }.add(i)
     }
 
     val ans = mutableListOf<Int>()
     for (query in queries) {
         val x = query[1]
-        val group = parent[x]
+        val group = find(x)
         if (query[0] == 2) {
             //  println("Remove $x")
             map[group]?.remove(x)
@@ -1276,13 +1276,357 @@ fun processQueries(c: Int, connections: Array<IntArray>, queries: Array<IntArray
     return ans.toIntArray()
 }
 
+fun canTraverseAllPairs(nums: IntArray): Boolean {
+    val n = nums.max()
+
+    val present = BooleanArray(n + 1)
+    val parent = IntArray(n + 1) { it }
+    val size = IntArray(n + 1) { 1 }
+    var count = n
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+
+        if (rootA == rootB) return false
+        if (size[rootA] > size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        count--
+        return true
+    }
+
+    for (num in nums) present[num] = true
+
+    if (present[1]) return nums.size == 1
+
+    for (d in 2..n) {
+        var multiple = d
+
+        while (multiple <= n) {
+            if (present[multiple]) {
+                union(multiple, d)
+            }
+            multiple += d
+        }
+    }
+
+    val group = find(nums[0])
+    for (i in 1 until nums.size) {
+        if (find(nums[i]) != group) return false
+    }
+    return true
+}
+
+fun minTime(n: Int, edges: Array<IntArray>, k: Int): Int {
+    val parent = IntArray(n) { it }
+    val size = IntArray(n) { 1 }
+    var count = n
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+
+        if (rootA == rootB) return false
+        if (size[rootA] >= size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        count--
+        return true
+    }
+
+    edges.sortByDescending { it[2] }
+    val m = edges.size
+    val counts = IntArray(m)
+    for (i in 0 until m) {
+        val (u, v, time) = edges[i]
+        union(u, v)
+        counts[i] = count
+    }
+
+    if (count >= k) return 0
+    var lo = 0
+    var hi = m - 1
+    var index = -1
+
+    while (lo <= hi) {
+        val mid = (lo + hi) / 2
+        val cnt = counts[mid]
+        if (cnt >= k) {
+            index = mid
+            lo = mid + 1
+        } else {
+            hi = mid - 1
+        }
+    }
+    //  println(counts.toList())
+    return if (index + 1 >= m) 0 else edges[index + 1][2]
+}
+
+fun countIslands(grid: Array<IntArray>, k: Int): Int {
+    val m = grid.size
+    val n = grid[0].size
+
+    fun fill(row: Int, col: Int): Long {
+        if (row !in 0 until m || col !in 0 until n) return 0
+        if (grid[row][col] <= 0) return 0
+        var result = grid[row][col].toLong()
+        grid[row][col] = -1
+
+        result += fill(row + 1, col)
+        result += fill(row - 1, col)
+        result += fill(row, col + 1)
+        result += fill(row, col - 1)
+        return result
+    }
+
+    var cnt = 0
+    for (i in 0 until m) {
+        for (j in 0 until n) {
+            if (grid[i][j] <= 0) continue
+            val totalValue = fill(i, j)
+            if (totalValue % k == 0L) cnt++
+        }
+    }
+    return cnt
+}
+
+fun pathExistenceQueries(n: Int, nums: IntArray, maxDiff: Int, queries: Array<IntArray>): BooleanArray {
+    var group = -1
+    val numToGroup = IntArray(n) { -1 }
+    var prev = Int.MIN_VALUE
+
+    for (i in nums.indices) {
+        val num = nums[i]
+        if (prev < 0 || num - prev > maxDiff) {
+            group++
+        }
+        prev = num
+        numToGroup[i] = group
+    }
+
+    return BooleanArray(queries.size) {
+        val (u, v) = queries[it]
+        numToGroup[u] == numToGroup[v]
+    }
+}
+
+fun numberOfComponents(properties: Array<IntArray>, k: Int): Int {
+    val n = properties.size
+    val props = properties.map { it.toSet() }
+    val parent = IntArray(n) { it }
+    val size = IntArray(n) { 1 }
+    var count = n
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+
+        if (rootA == rootB) return false
+        if (size[rootA] >= size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        count--
+        return true
+    }
+
+    for (i in 0 until n - 1) {
+        for (j in i + 1 until n) {
+            val r1 = find(i)
+            val r2 = find(j)
+            if (r1 == r2) continue
+            val intersect = props[i].intersect(props[j]).size
+            if (intersect >= k) union(i, j)
+        }
+    }
+    return count
+}
+
+fun smallestEquivalentString(s1: String, s2: String, baseStr: String): String {
+    val n = 123
+    val parent = IntArray(n) { it }
+    val size = IntArray(n) { 1 }
+    val smallest = IntArray(n) { if (it in 'a'.code..'z'.code) it else Int.MAX_VALUE }
+    var count = n
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+        val min = minOf(smallest[rootA], smallest[rootB])
+        if (rootA == rootB) {
+            smallest[rootA] = min
+            smallest[rootB] = min
+            return false
+        }
+        if (size[rootA] >= size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        smallest[rootA] = min
+        smallest[rootB] = min
+        count--
+        return true
+    }
+
+    for (i in 0 until s1.length) {
+        val a = s1[i].code
+        val b = s2[i].code
+        union(a, b)
+    }
+
+    val builder = StringBuilder()
+    for (c in baseStr) {
+        val ch = smallest[find(c.code)].toChar()
+        builder.append(ch)
+    }
+    return builder.toString()
+}
+
+fun hasValidPath(grid: Array<IntArray>): Boolean {
+    val m = grid.size
+    val n = grid[0].size
+
+    fun getNext(r: Int, c: Int): List<Pair<Int, Int>> {
+        val dirs = mapOf(
+            1 to listOf(0 to -1, 0 to 1),
+            2 to listOf(-1 to 0, 1 to 0),
+            3 to listOf(0 to -1, 1 to 0),
+            4 to listOf(0 to 1, 1 to 0),
+            5 to listOf(0 to -1, 0 to -1),
+            6 to listOf(0 to 1, 0 to -1)
+        )
+
+        fun isConnectedBack(d: Pair<Int, Int>, nr: Int, nc: Int): Boolean {
+            val opposite = (-d.first to -d.second)
+            val nextType = grid[nr][nc]
+            val nextDirs = dirs[nextType] ?: emptyList()
+            return opposite in nextDirs
+        }
+
+        val type = grid[r][c]
+        val res = mutableListOf<Pair<Int, Int>>()
+        for ((dr, dc) in dirs[type] ?: emptyList()) {
+            val nr = r + dr
+            val nc = c + dc
+            if (nr in 0 until m && nc in 0 until n) {
+                if (isConnectedBack(dr to dc, nr, nc)) {
+                    res.add(nr to nc)
+                }
+            }
+        }
+        return res
+    }
+
+    val memo = Array(m) { BooleanArray(n) }
+    memo[m - 1][n - 1] = true
+    fun dfs(row: Int, col: Int): Boolean {
+        if (row == m - 1 && col == n - 1) return true
+        if (memo[row][col]) return true
+
+        val nextList = getNext(row, col)
+        var result = false
+        for ((x, y) in nextList) {
+            if (dfs(x, y)) {
+                result = true
+                break
+            }
+        }
+        memo[row][col] = result
+        return result
+    }
+    return dfs(0, 0)
+}
+
+fun findAllPeople(n: Int, meetings: Array<IntArray>, firstPerson: Int): List<Int> {
+    val parent = IntArray(n) { it }
+    val size = IntArray(n) { 1 }
+
+    var count = n
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int): Boolean {
+        val rootA = find(a)
+        val rootB = find(b)
+
+        if (rootA == rootB) {
+            return false
+        }
+        if (size[rootA] >= size[rootB]) {
+            size[rootA] += size[rootB]
+            parent[rootB] = rootA
+        } else {
+            size[rootB] += size[rootA]
+            parent[rootA] = rootB
+        }
+        count--
+        return true
+    }
+
+    meetings.groupBy { it[3] }
+    union(0, firstPerson)
+    val edges = meetings.withIndex().sortedWith(compareBy<IndexedValue<IntArray>> { it.value[2] }.thenBy { it.index })
+    println(edges.map { it.value.toList() })
+    for (meeting in edges) {
+        val (a, b) = meeting.value
+        val secret = find(0)
+        if (find(a) == secret || find(b) == secret) union(a, b)
+    }
+    val group = find(0)
+    return (0 until n).filter { find(it) == group }
+}
+
 fun main() {
     println(
-        processQueries(
-            5,
-            "[[1,2],[2,3],[3,4],[4,5]]".to2DIntArray(),
-            "[[1,3],[2,1],[1,1],[2,2],[1,2]]".to2DIntArray()
-        ).toList()
+        findAllPeople(5, "[[1,4,3],[0,4,3]]".to2DIntArray(), 3)
     )
 
 }

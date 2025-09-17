@@ -827,9 +827,46 @@ fun swimInWater(grid: Array<IntArray>): Int {
     return 0
 }
 
+fun replaceNonCoprimes(nums: IntArray): List<Int> {
+    fun gcd(a: Long, b: Long): Long {
+        var x = a
+        var y = b
+        while (y != 0L) {
+            val temp = y
+            y = x % y
+            x = temp
+        }
+        return x
+    }
+
+    val stack = ArrayDeque<Long>()
+
+    for (num in nums) {
+       // println(stack)
+        var currentNum = num.toLong()
+        if (stack.isEmpty()) {
+            stack.addLast(currentNum)
+            continue
+        }
+
+        while (stack.isNotEmpty()) {
+            val lastNum = stack.last()
+            val g = gcd(lastNum, currentNum)
+            if(g == 1L) break
+            // lcm * gcd = a * b
+            currentNum = (lastNum * currentNum) / g
+            stack.removeLast()
+        }
+        stack.addLast(currentNum)
+    }
+
+    return stack.map { it.toInt() }
+}
+
+
 fun main() {
 
     println(
-        sortVowels("lEetcOde")
+        replaceNonCoprimes(intArrayOf(6,4,3,2,7,6,2))
     )
 }
