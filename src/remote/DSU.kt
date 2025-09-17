@@ -1985,13 +1985,14 @@ fun containsCycle(grid: Array<CharArray>): Boolean {
             if (x !in 0 until m || y !in 0 until n) continue
             if (grid[x][y] != ch) continue
 
-            when(visited[x][y]) {
+            when (visited[x][y]) {
                 0 -> {
                     visited[x][y] = visitTime + 1
                     if (dfs(x, y, visitTime + 1, ch)) {
                         return true
                     }
                 }
+
                 in 1 until lastVisit -> return true
             }
         }
@@ -2009,6 +2010,84 @@ fun containsCycle(grid: Array<CharArray>): Boolean {
         }
     }
     return false
+}
+
+fun hitBricks(grid: Array<IntArray>, hits: Array<IntArray>): IntArray {
+    val rows = grid.size
+    val cols = grid[0].size
+    val n = rows * cols
+    val parent = IntArray(n + 1) { it }
+    val size = IntArray(n + 1) { 1 }
+    val topNode = n
+
+    fun toId(r: Int, c: Int) = r * cols + c
+
+    fun find(u: Int): Int {
+        if (u != parent[u]) parent[u] = find(parent[u])
+        return parent[u]
+    }
+
+    fun union(a: Int, b: Int) {
+        var rootA = find(a)
+        var rootB = find(b)
+        if (rootA == rootB) return
+        if (size[rootA] < size[rootB]) {
+            val tmp = rootA
+            rootA = rootB
+            rootB = tmp
+        }
+        parent[rootB] = rootA
+        size[rootA] += size[rootB]
+    }
+
+    val hitBlocks = hits.map { toId(it[0], it[1]) }.toSet()
+    val dirX = intArrayOf(-1, 1, 0, 0)
+    val dirY = intArrayOf(0, 0, -1, 1)
+
+    for (i in 0 until rows) {
+        for (j in 0 until cols) {
+            val id = toId(i, j)
+            if (grid[i][j] != 1 || id in hitBlocks) continue
+
+            if (i == 0) union(id, topNode)
+
+            for (k in 0 until 4) {
+                val x = i + dirX[k]
+                val y = j + dirY[k]
+                if (x !in 0 until rows || y !in 0 until cols) continue
+                val idx = toId(x, y)
+                if (grid[x][y] != 1 || idx in hitBlocks) continue
+                union(id, idx)
+            }
+        }
+    }
+
+    val result = IntArray(hits.size)
+    var count = size[find(topNode)]
+
+    for (i in (hits.size -1) downTo 0) {
+        val r = hits[i][0]
+        val c = hits[i][1]
+        if (grid[r][c] == 0) continue
+
+        val id = toId(r, c)
+        grid[r][c] = 1
+
+        if (r == 0) union(id, topNode)
+        for (k in 0 until 4) {
+            val x = r + dirX[k]
+            val y = c + dirY[k]
+            if (x !in 0 until rows || y !in 0 until cols) continue
+            if (grid[x][y] == 1) {
+                union(id, toId(x, y))
+            }
+        }
+        val newCount = size[find(topNode)]
+        result[i] = (newCount - count - 1).coerceAtLeast(0)
+        count = newCount
+    }
+
+    return result
 }
 
 fun main() {
