@@ -1,6 +1,5 @@
-package remote
+package topic
 
-import local.to2DIntArray
 import java.util.*
 import kotlin.math.abs
 
@@ -2090,9 +2089,89 @@ fun hitBricks(grid: Array<IntArray>, hits: Array<IntArray>): IntArray {
     return result
 }
 
+fun countComponents(nums: IntArray, threshold: Int): Int {
+
+    val (numbers, remaining) = nums.partition { it <= threshold }
+    if (numbers.isEmpty()) return nums.size
+
+    val n = numbers.max().coerceAtLeast(threshold)
+    val parent = IntArray(n + 1) { it }
+    val size = IntArray(n + 1) { 1 }
+
+    fun find(u: Int): Int {
+        if (u == parent[u]) return u
+        val root = find(parent[u])
+        parent[u] = root
+        return root
+    }
+
+    fun union(a: Int, b: Int) {
+        var rootA = find(a)
+        var rootB = find(b)
+        if (rootA == rootB) return
+
+        if (size[rootB] > size[rootA]) {
+            val tmp = rootA
+            rootA = rootB
+            rootB = tmp
+        }
+        parent[rootB] = rootA
+        size[rootA] += size[rootB]
+    }
+
+    for (num in numbers) {
+        var x = num
+        while (x <= threshold) {
+            union(x, num)
+            x += num
+        }
+    }
+
+    val groupCount = numbers.map { find(it) }.distinct().size
+
+    return remaining.size + groupCount
+}
+
+fun smallestMissingValueSubtree(parents: IntArray, nums: IntArray): IntArray {
+    val n = nums.size
+
+    val result = IntArray(n) { 1 }
+
+    val graph = Array(n) { mutableListOf<Int>() }
+    for (i in 1 until n) {
+        graph[parents[i]].add(i)
+    }
+
+    val set = mutableSetOf<Int>()
+
+    fun dfs(u: Int) {
+        val num = nums[u]
+        if (num in set) return
+        set.add(num)
+
+        for (v in graph[u]) {
+            dfs(v)
+        }
+    }
+
+    var smallestMissing = 1
+    var u = nums.indexOf(1)
+    while (u != -1) {
+       // println("Visit $u: $set")
+        dfs(u)
+        while (smallestMissing in set) smallestMissing++
+        result[u] = smallestMissing
+        u = parents[u]
+    }
+    return result
+}
+
 fun main() {
     println(
-        maxNumEdgesToRemove(4, "[[3,1,2],[3,2,3],[1,1,3],[1,2,4],[1,1,2],[2,3,4]]".to2DIntArray())
+        smallestMissingValueSubtree(
+            intArrayOf(-1, 0, 1, 0, 3, 3),
+            intArrayOf(5, 4, 6, 2, 1, 3)
+        ).toList()
     )
 
 }
