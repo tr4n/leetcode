@@ -842,7 +842,7 @@ fun replaceNonCoprimes(nums: IntArray): List<Int> {
     val stack = ArrayDeque<Long>()
 
     for (num in nums) {
-       // println(stack)
+        // println(stack)
         var currentNum = num.toLong()
         if (stack.isEmpty()) {
             stack.addLast(currentNum)
@@ -852,7 +852,7 @@ fun replaceNonCoprimes(nums: IntArray): List<Int> {
         while (stack.isNotEmpty()) {
             val lastNum = stack.last()
             val g = gcd(lastNum, currentNum)
-            if(g == 1L) break
+            if (g == 1L) break
             // lcm * gcd = a * b
             currentNum = (lastNum * currentNum) / g
             stack.removeLast()
@@ -863,10 +863,15 @@ fun replaceNonCoprimes(nums: IntArray): List<Int> {
     return stack.map { it.toInt() }
 }
 
+fun maxFrequencyElements(nums: IntArray): Int {
+    val map = nums.toList().groupingBy { it }.eachCount()
+    val freq = map.maxOf { it.value }
+    return map.count { it.value == freq } * freq
+}
 
 fun main() {
 
     println(
-        replaceNonCoprimes(intArrayOf(6,4,3,2,7,6,2))
+        replaceNonCoprimes(intArrayOf(6, 4, 3, 2, 7, 6, 2))
     )
 }

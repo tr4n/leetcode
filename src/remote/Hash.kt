@@ -1,10 +1,6 @@
 package remote
 
-import java.util.TreeMap
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.iterator
-import kotlin.text.iterator
+import java.util.*
 
 class FreqHash(val base: Long = 131L) {
     private val pow = LongArray(26) { 1L }
@@ -1320,7 +1316,6 @@ fun countCells(grid: Array<CharArray>, pattern: String): Int {
     for (id in 0 until total) if (rowMark[id] && colMark[id]) result++
     return result
 }
-
 
 fun main() {
     println(

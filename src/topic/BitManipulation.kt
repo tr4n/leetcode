@@ -409,8 +409,276 @@ fun findTheLongestSubstring(s: String): Int {
     return best
 }
 
+fun numSplits(s: String): Int {
+    val n = s.length
+    var set = mutableSetOf<Char>()
+    val left = IntArray(n)
+    val right = IntArray(n)
+    for (i in 0 until n) {
+        set.add(s[i])
+        left[i] = set.size
+    }
+    set = mutableSetOf()
+    for (i in (n - 1) downTo 0) {
+        set.add(s[i])
+        right[i] = set.size
+    }
+
+    var cnt = 0
+    for (i in 0 until n - 1) {
+        if (left[i] == right[i + 1]) cnt++
+    }
+    return cnt
+}
+
+
+fun longestAwesome(s: String): Int {
+    val n = s.length
+    val firstSeen = mutableMapOf<Int, Int>()
+    firstSeen[0] = -1
+    var best = 0
+    var status = 0
+    for (last in 0 until n) {
+        val mask = 1 shl (s[last] - '0')
+        status = status xor mask
+
+        val evenFirst = firstSeen[status]
+        if (evenFirst == null) {
+            firstSeen[status] = last
+        } else {
+            best = maxOf(best, last - evenFirst)
+        }
+
+        for (c in '0'..'9') {
+            val oddMask = 1 shl (c - '0')
+            val oddStatus = status xor oddMask
+            val oddFirst = firstSeen[oddStatus] ?: continue
+            best = maxOf(best, last - oddFirst)
+        }
+    }
+    return best
+}
+
+fun minOperations(nums: IntArray): Int {
+    val totalOneBits = nums.sumOf { it.countOneBits() }
+    val highestBits = nums.maxOf { 32 - it.countLeadingZeroBits() }
+
+    return highestBits + totalOneBits - 1
+}
+
+fun stepsToZero(num: Int): Int {
+    var n = num
+    var steps = 0
+    while (n > 0) {
+        steps++
+        n = if (n % 2 == 0) n / 2 else n - 1
+    }
+    return steps
+}
+
+fun stepsToZeroFast(num: Int): Int {
+    if (num == 0) return 0
+    val bits = 32 - Integer.numberOfLeadingZeros(num)
+    val ones = Integer.bitCount(num)
+    return bits + ones - 1
+}
+
+fun maximumBobPoints(numArrows: Int, aliceArrows: IntArray): IntArray {
+
+    val bobArrows = IntArray(12)
+    var maxPoints = 0
+    var result = mutableListOf<Int>()
+    fun backtrack(pos: Int, remaining: Int, score: Int) {
+        if (remaining < 0) return
+        val potential = score + (pos * (pos + 1)) / 2
+        if (potential <= maxPoints) return
+
+        if (pos == 0) {
+            if (score > maxPoints) {
+                maxPoints = score
+                result = bobArrows.toMutableList()
+                result[0] = remaining
+            }
+            return
+        }
+
+
+        // Bob take win this section
+        val arrow = aliceArrows[pos] + 1
+        if (arrow <= remaining) {
+            bobArrows[pos] = arrow
+            backtrack(pos - 1, remaining - arrow, score + pos)
+            bobArrows[pos] = 0
+        }
+
+        // Alice take win this section
+        bobArrows[pos] = 0
+        backtrack(pos - 1, remaining, score)
+    }
+
+    backtrack(11, numArrows, 0)
+    return result.toIntArray()
+}
+
+fun countExcellentPairs(nums: IntArray, k: Int): Long {
+
+    val list = nums.distinct().sortedBy { it.countOneBits() }
+    val n = list.size
+
+    var ans = 0L
+    for (i in 0 until n) {
+        val num = list[i]
+        val numCount = num.countOneBits()
+        if (2L * numCount >= k) {
+            ans++
+        }
+        var hi = i
+        var lo = 0
+        var first = -1
+        while (lo <= hi) {
+            val mid = (lo + hi) / 2
+            val sum = list[mid].countOneBits() + numCount
+            //    println("${list[mid]} + $num = $sum")
+            if (sum < k) {
+                lo = mid + 1
+            } else {
+                first = mid
+                hi = mid - 1
+            }
+        }
+        if (first < 0) continue
+        val lessCount = 2L * (i - first)
+        //   println("${list[first]}-$num: $lessCount")
+        ans += lessCount
+    }
+
+    return ans
+}
+
+fun maximumRows(matrix: Array<IntArray>, numSelect: Int): Int {
+    val m = matrix.size
+    val n = matrix[0].size
+
+    var maxBits = 0
+    val nums = matrix.map { row ->
+        var num = 0
+        for (bit in row) num = (num shl 1) or bit
+        maxBits = maxOf(maxBits, 32 - num.countLeadingZeroBits())
+        num
+    }
+
+    val limit = (1 shl n)
+
+    var maxRows = 0
+    for (mask in 0 until limit) {
+        val bitCount = mask.countOneBits()
+        if (bitCount != numSelect) continue
+        val iMask = mask.inv()
+        val cover = nums.count { it and iMask == 0 }
+        maxRows = maxOf(maxRows, cover)
+    }
+
+    return maxRows
+}
+
+fun xorAllNums(nums1: IntArray, nums2: IntArray): Int {
+    val xor1 = if (nums2.size % 2 == 0) 0 else nums1.fold(0, Int::xor)
+    val xor2 = if (nums1.size % 2 == 0) 0 else nums2.fold(0, Int::xor)
+    return xor1 xor xor2
+}
+
+fun minimizeXor(num1: Int, num2: Int): Int {
+    var bitCount = num2.countOneBits()
+
+    var x = 0
+    for (i in 31 downTo 0) {
+        if (bitCount <= 0) break
+        val bit = (num1 shr i) and 1
+        if (bit == 1) {
+            x = x or (1 shl i)
+            bitCount--
+        }
+    }
+    for (i in 0 until 31) {
+        if (bitCount <= 0) break
+        val bit = (num1 shr i) and 1
+        if (bit == 0) {
+            x = x or (1 shl i)
+            bitCount--
+        }
+    }
+    return x
+}
+
+fun findArray(pref: IntArray): IntArray {
+    val n = pref.size
+    val result = IntArray(n)
+    var remainingXor = pref[n - 1]
+    for (i in (n - 1) downTo 1) {
+        result[i] = pref[i] xor pref[i - 1]
+        remainingXor = remainingXor xor result[i]
+    }
+    result[0] = remainingXor
+    return result
+}
+
+fun makeStringsEqual(s: String, target: String): Boolean {
+    val n = s.length
+    if (s == target) return true
+
+    var oneBits = 0
+    for (c in s) if (c == '1') oneBits++
+
+    for (i in 0 until n) {
+        val a = s[i]
+        val b = target[i]
+        if (a == b) continue
+        if (a == '0') {
+            if (oneBits <= 0) return false
+            oneBits++
+        }
+    }
+
+    for (i in 0 until n) {
+        val a = s[i]
+        val b = target[i]
+        if (a == b) continue
+        if (a == '1') {
+            if (oneBits <= 1) return false
+            oneBits--
+        }
+    }
+
+    return true
+}
+
+fun substringXorQueries(s: String, queries: Array<IntArray>): Array<IntArray> {
+    val seen = mutableMapOf<Int, IntArray>()
+    val n = s.length
+    for (i in 0 until n) {
+        if (s[i] == '0') {
+            if (seen[0] == null) seen[0] = intArrayOf(i, i)
+            continue
+        }
+        var num = 0
+        for (len in 0 until minOf(30, n - i)) {
+            num = (num shl 1) or (s[i + len] - '0')
+            if (seen[num] == null) {
+                seen[num] = intArrayOf(i, i + len)
+            }
+        }
+    }
+
+    return Array(queries.size) {
+        val target = queries[it][0] xor queries[it][1]
+        seen[target] ?: intArrayOf(-1, -1)
+    }
+}
+
+
+
 fun main() {
     println(
-        findTheLongestSubstring("eleetminicoworoep")
+        minimizeXor(1, 12)
     )
 }
