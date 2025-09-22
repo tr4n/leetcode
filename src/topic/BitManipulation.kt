@@ -675,10 +675,21 @@ fun substringXorQueries(s: String, queries: Array<IntArray>): Array<IntArray> {
     }
 }
 
+fun largestCombination(candidates: IntArray): Int {
+    val counts = IntArray(32) {
+        var cnt = 0
+        for (num in candidates) {
+            if ((num shr it) and 1 == 1) cnt++
+        }
+        cnt
+    }
+
+    return counts.max()
+}
 
 
 fun main() {
     println(
-        minimizeXor(1, 12)
+        largestCombination(intArrayOf(16, 17, 71, 62, 12, 24, 14))
     )
 }
