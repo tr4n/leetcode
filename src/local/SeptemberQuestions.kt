@@ -1125,11 +1125,89 @@ fun countStableSubsequences(nums: IntArray): Int {
     return ((endWith0 + endWith00 + endWith1 + endWith11) % mod).toInt()
 }
 
+fun checkPowersOfThree(n: Int): Boolean {
+    return n.toString(3).contains('2')
+}
+
+fun triangularSum(nums: IntArray): Int {
+    // Result = Σ ( arr[i] * C(n-1, i) ), i = 0..n-1
+    var arr = nums.toList()
+    while (arr.size > 1) {
+        arr = arr.zipWithNext { a, b -> (a + b) % 10 }
+    }
+    return arr[0]
+}
+
+fun countGoodNumbers(n: Long): Int {
+    // 4 x 5^n/2 x 4^(n/2  (n odd)
+    // 4 x 5^(n/2 -1)  x 4 ^ (n/2)
+    val mod = 1_000_000_007L
+
+    fun pow(base: Long, exp: Long, modulus: Long): Long {
+        var res = 1L
+        var b = base % modulus
+        var e = exp
+
+        while (e > 0) {
+            if (e % 2 == 1L) {
+                res = (res * b) % modulus
+            }
+
+            b = (b * b) % mod
+            e /= 2
+        }
+        return res
+    }
+
+    val y = n / 2
+    val x = if (n % 2 == 1L) y else y - 1
+
+    val result = 4L * pow(4L, y, mod) * pow(5, x, mod) % mod
+    return (result % mod).toInt()
+}
+
+fun closestPrimes(left: Int, right: Int): IntArray {
+
+    val isPrime = BooleanArray(right + 1) { true }
+    isPrime[0] = false
+    isPrime[1] = false
+
+    var p = 2
+    while (p * p <= right) {
+        if (isPrime[p]) {
+            for (i in p * p..right step p) {
+                isPrime[i] = false
+            }
+        }
+        p ++
+    }
+
+    var prev = -1
+    var first = -1
+    var second = -1
+    var minDist = Int.MAX_VALUE
+    for (num in left..right) {
+        if (!isPrime[num]) continue
+        if (prev == -1) {
+            prev = num
+            continue
+        }
+        val dist = num - prev
+        if (dist < minDist) {
+            minDist = dist
+            first = prev
+            second = num
+        }
+        prev = num
+    }
+    return intArrayOf(first, second)
+}
+
 fun main() {
 //    println(
 //        maxProduct(intArrayOf(9, 2, 19))
 //    )
     println(
-
+        closestPrimes(10,19).toList()
     )
 }

@@ -1,6 +1,6 @@
 package remote
 
-class Combinatorics(nMax: Int, val mod: Long = 1_000_000_007L) {
+class MathUtils(nMax: Int, val mod: Long = 1_000_000_007L) {
     private val fact = LongArray(nMax + 1)
     private val invFact = LongArray(nMax + 1)
 
@@ -47,12 +47,27 @@ class Combinatorics(nMax: Int, val mod: Long = 1_000_000_007L) {
         if (r < 0 || r > n) return 0
         return (fact[n] * invFact[n - r]) % mod
     }
+
+    fun factorize(k: Int): Map<Int, Int> {
+        var num = k
+        val map = mutableMapOf<Int, Int>()
+        var d = 2
+        while (d * d <= num) {
+            while (num % d == 0) {
+                map[d] = (map[d] ?: 0) + 1
+                num /= d
+            }
+            d++
+        }
+        if (num > 1) map[num] = (map[num] ?: 0) + 1
+        return map
+    }
 }
 
 fun minMaxSums(nums: IntArray, k: Int): Int {
     val mod = 1_000_000_007L
     val n = nums.size
-    val combinators = Combinatorics(n, mod)
+    val combinators = MathUtils(n, mod)
     val prefix = LongArray(n + 1)
     prefix[0] = 1L
     for (i in 1..n) {
@@ -75,7 +90,7 @@ fun minMaxSums(nums: IntArray, k: Int): Int {
         val num = nums[i].toLong()
         val less = computeCSum(i, minOf(i, k - 1))
         val greater = computeCSum(n - i - 1, minOf(n - i - 1, k - 1))
-       // println("$num $less $greater")
+        // println("$num $less $greater")
 
         val minSum = (less * num) % mod
         val maxSum = (greater * num) % mod
@@ -85,6 +100,30 @@ fun minMaxSums(nums: IntArray, k: Int): Int {
 
     }
     return sum.toInt()
+}
+
+fun waysToFillArray(queries: Array<IntArray>): IntArray {
+    val mod = 1_000_000_007
+    val nMax = queries.maxOf { it[0] }
+    val com = MathUtils(nMax)
+
+
+    fun countWays(n: Int, k: Int): Long {
+        val factors = com.factorize(k)
+        val maxExp = factors.values.maxOrNull() ?: 0
+        val limit = n - 1 + maxExp
+
+        var ans = 1L
+        for (e in factors.values) {
+            ans = (ans * com.nCr(e + n - 1, n - 1)) % mod
+        }
+        return ans
+    }
+
+    return IntArray(queries.size) {
+        val (n, k) = queries[it]
+        countWays(n, k).toInt()
+    }
 }
 
 fun main() {

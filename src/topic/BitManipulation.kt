@@ -1,5 +1,7 @@
 package topic
 
+import local.numSub
+
 import remote.ANDSparseTable
 
 class LongBasisXor(private val maxBits: Int = Long.SIZE_BITS) {
@@ -915,8 +917,33 @@ fun maxSubarrays(nums: IntArray): Int {
 }
 
 
+fun getXORSum(arr1: IntArray, arr2: IntArray): Int {
+    val allXor = arr2.fold(0, Int::xor)
+
+    var result = 0
+    for (i in 0 until arr1.size) {
+        result = result xor (arr1[i] and allXor)
+    }
+    return result
+}
+
+fun totalHammingDistance(nums: IntArray): Int {
+    val n = nums.size
+    var total = 0
+    for (i in 31 downTo 0) {
+        var oneCount = 0
+        for (num in nums) {
+            if (((num shr i) and 1) == 1) oneCount++
+        }
+        val zeroCount = n - oneCount
+        total += oneCount * zeroCount
+    }
+    return total
+}
+
 fun main() {
     println(
+        println(totalHammingDistance(intArrayOf(4, 14, 2)))
         maxSubarrays(intArrayOf(0,8,0,0,0,23))
     )
 }
