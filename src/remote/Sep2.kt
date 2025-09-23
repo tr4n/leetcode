@@ -107,6 +107,21 @@ fun minDiffInBST(root: TreeNode?): Int {
     return minDist
 }
 
+
+fun compareVersion(version1: String, version2: String): Int {
+    val revision1 = version1.split(".")
+    val revision2 = version2.split(".")
+    val n = maxOf(revision1.size, revision2.size)
+
+    for (i in 0 until n) {
+        val a = revision1.getOrNull(i)?.toIntOrNull() ?: 0
+        val b = revision2.getOrNull(i)?.toIntOrNull() ?: 0
+        if (a == b) continue
+        return if (a > b) 1 else -1
+    }
+    return 0
+}
+
 fun main() {
     println(
         candy(intArrayOf(6, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 1, 0))

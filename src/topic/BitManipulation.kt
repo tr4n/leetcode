@@ -1,5 +1,7 @@
 package topic
 
+import remote.ANDSparseTable
+
 class LongBasisXor(private val maxBits: Int = Long.SIZE_BITS) {
     private val basis = LongArray(maxBits)
 
@@ -688,8 +690,233 @@ fun largestCombination(candidates: IntArray): Int {
 }
 
 
+fun maximumOr(nums: IntArray, k: Int): Long {
+    val n = nums.size
+    val prefix = LongArray(n + 1)
+    val suffix = LongArray(n + 1)
+
+    for (i in 0 until n) {
+        prefix[i + 1] = prefix[i] or nums[i].toLong()
+    }
+    for (i in (n - 1) downTo 0) {
+        suffix[i] = suffix[i + 1] or nums[i].toLong()
+    }
+
+    var maxOr = 0L
+
+    for (i in 0 until n) {
+        val num = nums[i].toLong() shl k
+        val pre = prefix[i]
+        val suf = suffix[i + 1]
+        val value = pre or suf or num
+        maxOr = maxOf(maxOr, value)
+    }
+
+    return maxOr
+}
+
+fun minImpossibleOR(nums: IntArray): Int {
+    val set = nums.toSet()
+    for (i in 0 until 32) {
+        val num = 1 shl i
+        if (num !in set) return num
+    }
+    return nums.max() + 1
+}
+
+fun doesValidArrayExist(derived: IntArray): Boolean {
+    return derived.fold(0, Int::xor) == 0
+}
+
+fun findThePrefixCommonArray(A: IntArray, B: IntArray): IntArray {
+    val result = IntArray(A.size)
+    var maskA = 0L
+    var maskB = 0L
+
+    for (i in 0 until A.size) {
+        maskA = maskA or (1L shl A[i])
+        maskB = maskB or (1L shl B[i])
+        result[i] = (maskA and maskB).countOneBits()
+    }
+    return result
+}
+
+fun beautifulSubarrays(nums: IntArray): Long {
+    val seen = mutableMapOf<Int, Int>()
+    seen[0] = 1
+    val n = nums.size
+    var status = 0
+    var ans = 0L
+    for (i in 0 until n) {
+        val num = nums[i]
+
+        for (j in 21 downTo 0) {
+            if ((num shr j) and 1 == 1) {
+                status = status xor (1 shl j)
+            }
+        }
+        val seenCount = seen[status] ?: 0
+        ans += seenCount.toLong()
+        seen[status] = seenCount + 1
+    }
+
+    return ans
+}
+
+fun squareFreeSubsets(nums: IntArray): Int {
+    val mod = 1_000_000_007L
+    val primes = intArrayOf(2, 3, 5, 7, 11, 13, 17, 19, 23, 29)
+    var cnt1 = nums.count { it == 1 }
+    val counts = nums.filterNot { num ->
+        num == 1 || primes.any { num % (it * it) == 0 }
+    }.map { num ->
+        var binary = 0
+        for (i in 0 until primes.size) {
+            if (num % primes[i] == 0) {
+                binary = binary or (1 shl i)
+            }
+        }
+        binary
+    }.groupingBy { it }.eachCount()
+
+    val maxMask = (1 shl (primes.size))
+    val dp = LongArray(maxMask)
+    dp[0] = 1L
+
+    for ((num, cnt) in counts) {
+        for (mask in (maxMask - 1) downTo 0) {
+            if (dp[mask] <= 0) continue
+            if (num and mask != 0) continue
+            val newMask = num or mask
+            dp[newMask] = (dp[newMask] + dp[mask] * cnt) % mod
+
+        }
+    }
+
+    var ans = 0L
+    for (mask in 0 until maxMask) {
+        ans = (ans + dp[mask]) % mod
+    }
+
+    var pow2 = 1L
+    while (cnt1-- > 0) pow2 = (pow2 * 2) % mod
+    ans = (ans * pow2) % mod
+    ans = (ans - 1 + mod) % mod
+    return ans.toInt()
+}
+
+fun minOperations(n: Int): Int {
+    var num = n
+    val maxBits = 32 - n.countLeadingZeroBits()
+    var cnt = 0
+    for (i in 0 until maxBits + 1) {
+        if ((num shr i) and 1 == 0) continue
+        // println("$num ${num.toString(2)} ${num.countOneBits()}")
+        val delta = 1 shl i
+        val add = num + delta
+        val subtract = num - delta
+        num = if (add.countOneBits() <= subtract.countOneBits()) {
+            add
+        } else {
+            subtract
+        }
+        cnt++
+        if (num == 0) return cnt
+    }
+    return cnt
+}
+
+fun minOperations(nums: List<Int>, target: Int): Int {
+    val maxTargetBits = 32 - target.countLeadingZeroBits()
+    val maxNumBits = nums.maxOf { 32 - it.countLeadingZeroBits() }
+    val maxBits = maxOf(maxTargetBits, maxNumBits)
+
+    val bits = IntArray(maxBits + 1)
+    for (num in nums) {
+        val exp = Integer.numberOfTrailingZeros(num)
+        bits[exp]++
+    }
+
+    //  println(target.toString(2).reversed().toList())
+    //  println("---")
+    //  println(bits.toList())
+    var cnt = 0
+    for (i in 0 until maxTargetBits) {
+        val needBit = (target shr i) and 1
+        val extraBits = bits[i] - needBit
+        if (i + 1 < maxBits && extraBits >= 2) {
+            val carry = extraBits / 2
+            bits[i + 1] += carry
+            bits[i] -= extraBits
+        }
+
+        if (extraBits < 0) {
+            var j = i + 1
+            while (j < maxBits && bits[j] == 0) j++
+            if (j == maxBits) return -1
+            bits[j]--
+            j--
+            while (j >= i) {
+                bits[j--]++
+                cnt++
+            }
+            bits[i]++
+        }
+
+        //  println(bits.toList())
+    }
+    return cnt
+}
+
+fun maxSubarrays(nums: IntArray): Int {
+    val n = nums.size
+    val table = ANDSparseTable(nums)
+
+    val totalAND = nums.reduce { acc, i -> acc and i }
+
+    var l = 0
+    var r = n - 1
+    var pos = n - 1
+    while (l <= r) {
+        val mid = (l + r) / 2
+        val value = table.queryAND(0, mid)
+        if (value <= totalAND) {
+            pos = mid
+            r = mid - 1
+        } else {
+            l = mid + 1
+        }
+    }
+    if (pos == n - 1) return 1
+    println(nums.toList().subList(0, pos + 1))
+    var cnt = 1
+    pos++
+    while (pos < n) {
+        var l = pos
+        var r = n - 1
+        var index = -1
+        while (l <= r) {
+            val mid = (l + r) / 2
+            val value = table.queryAND(pos, mid)
+            if (value <= 0) {
+                index = mid
+                r = mid - 1
+            } else {
+                l = mid + 1
+            }
+        }
+        if (index < pos) return 1
+        println(nums.toList().subList(pos, index + 1))
+        pos = index + 1
+        cnt++
+    }
+
+    return cnt
+}
+
+
 fun main() {
     println(
-        largestCombination(intArrayOf(16, 17, 71, 62, 12, 24, 14))
+        maxSubarrays(intArrayOf(0,8,0,0,0,23))
     )
 }
