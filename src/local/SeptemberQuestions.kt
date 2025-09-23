@@ -1179,7 +1179,7 @@ fun closestPrimes(left: Int, right: Int): IntArray {
                 isPrime[i] = false
             }
         }
-        p ++
+        p++
     }
 
     var prev = -1
@@ -1203,11 +1203,21 @@ fun closestPrimes(left: Int, right: Int): IntArray {
     return intArrayOf(first, second)
 }
 
+fun minOperations2(nums: IntArray, k: Int): Int {
+    val totalXor = nums.fold(0, Int::xor)
+    if (totalXor == k) return 0
+    var cnt = 0
+    for (i in 31 downTo 0) {
+        if ((k shr i) and 1 != (totalXor shr i) and 1) cnt++
+    }
+    return cnt
+}
+
 fun main() {
 //    println(
 //        maxProduct(intArrayOf(9, 2, 19))
 //    )
     println(
-        closestPrimes(10,19).toList()
+        closestPrimes(10, 19).toList()
     )
 }

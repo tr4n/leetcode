@@ -944,6 +944,5 @@ fun totalHammingDistance(nums: IntArray): Int {
 fun main() {
     println(
         println(totalHammingDistance(intArrayOf(4, 14, 2)))
-        maxSubarrays(intArrayOf(0,8,0,0,0,23))
     )
 }
