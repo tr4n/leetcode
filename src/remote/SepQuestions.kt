@@ -869,9 +869,42 @@ fun maxFrequencyElements(nums: IntArray): Int {
     return map.count { it.value == freq } * freq
 }
 
+fun fractionToDecimal(numerator: Int, denominator: Int): String {
+
+    if(numerator == 0) return "0"
+    val builder = StringBuilder()
+    val isNegative = (numerator >= 0) xor (denominator > 0)
+    if (isNegative) builder.append("-")
+    val num = abs(numerator.toLong())
+    val den = abs(denominator.toLong())
+
+    builder.append(num / den)
+    var remainder = num % den
+    if (remainder == 0L) return builder.toString()
+
+    builder.append(".")
+
+    val seen = mutableMapOf<Long, Int>()
+    var i = builder.length
+    while (remainder != 0L) {
+        val pos = seen[remainder]
+        if (pos != null) {
+            builder.insert(pos, "(")
+            builder.append(")")
+            break
+        }
+        seen[remainder] = i++
+        remainder *= 10L
+        builder.append(remainder / den)
+        remainder %= den
+    }
+
+    return builder.toString()
+}
+
 fun main() {
 
     println(
-        replaceNonCoprimes(intArrayOf(6, 4, 3, 2, 7, 6, 2))
+        fractionToDecimal(1, 3)
     )
 }

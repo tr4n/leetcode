@@ -573,7 +573,7 @@ fun halveArray(nums: IntArray): Int {
     return count
 }
 
-fun minOperations(nums: IntArray, k: Int): Int {
+fun minOperations1(nums: IntArray, k: Int): Int {
     val priorityQueue = PriorityQueue<Long>()
 
     for (num in nums) {

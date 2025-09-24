@@ -1,7 +1,5 @@
 package topic
 
-import local.numSub
-
 import remote.ANDSparseTable
 
 class LongBasisXor(private val maxBits: Int = Long.SIZE_BITS) {
@@ -254,21 +252,33 @@ fun maximumXOR(nums: IntArray): Int {
 }
 
 fun maximumXorProduct(a: Long, b: Long, n: Int): Int {
-    var x = 0L
     var xorA = a
     var xorB = b
     for (i in (n - 1) downTo 0) {
         val aBit = (a shr i) and 1L
         val bBit = (b shr i) and 1L
-        if (aBit == 0L && bBit == 0L) {
-            x = x or (1L shl i)
+        val mask = 1L shl i
+        when {
+            aBit == bBit -> {
+                xorA = xorA or mask
+                xorB = xorB or mask
+            }
+
+            xorA < xorB -> {
+                xorA = xorA or mask
+                xorB = xorB and mask.inv()
+            }
+
+            else -> {
+                xorB = xorB or mask
+                xorA = xorA and mask.inv()
+            }
         }
     }
     val mod = 1_000_000_007L
     val finalA = xorA % mod
     val finalB = xorB % mod
     val product = (finalA * finalB) % mod
-    println("x = $x, xorA = $xorA, xorB = $xorB")
     return product.toInt()
 }
 
@@ -463,7 +473,7 @@ fun longestAwesome(s: String): Int {
     return best
 }
 
-fun minOperations(nums: IntArray): Int {
+fun minOperations1(nums: IntArray): Int {
     val totalOneBits = nums.sumOf { it.countOneBits() }
     val highestBits = nums.maxOf { 32 - it.countLeadingZeroBits() }
 
@@ -941,8 +951,153 @@ fun totalHammingDistance(nums: IntArray): Int {
     return total
 }
 
+fun maxGoodNumber(nums: IntArray): Int {
+    val (a, b, c) = nums
+
+    fun createNum(a: Int, b: Int, c: Int): Int {
+        var num = a
+        num = (num shl (32 - b.countLeadingZeroBits())) or b
+        num = (num shl (32 - c.countLeadingZeroBits())) or c
+        return num
+    }
+
+    return maxOf(
+        createNum(a, b, c),
+        createNum(a, c, b),
+        createNum(b, a, c),
+        createNum(b, c, a),
+        createNum(c, a, b),
+        createNum(c, b, a)
+    )
+
+}
+
+fun concatenatedBinary(n: Int): Int {
+    val mod = 1_000_000_007
+    var num = 1L
+    for (i in 2..n) {
+        val bits = 32 - i.countLeadingZeroBits()
+        num = (num shl bits) or i.toLong()
+        num %= mod
+    }
+    return num.toInt()
+}
+
+fun smallestSufficientTeam(req_skills: Array<String>, people: List<List<String>>): IntArray {
+    val maxBits = req_skills.size
+    val skillToIndex = req_skills.withIndex().associate { it.value to it.index }
+    val skillPeople = people.map { skills ->
+        var num = 0
+        for (skill in skills) {
+            val i = skillToIndex[skill] ?: 0
+            num = num or (1 shl i)
+        }
+        num
+    }
+    val n = people.size
+    val limit = 1 shl maxBits
+    val dp = IntArray(limit) { n }
+    val parent = IntArray(limit) { -1 }
+    val choose = IntArray(limit) { -1 }
+    dp[0] = 0
+
+    for (p in skillPeople.withIndex()) {
+        for (status in 0 until limit) {
+            if (dp[status] >= n) continue
+            val newStatus = status or p.value
+            val newSize = dp[status] + 1
+            if (newStatus == status || newSize >= dp[newStatus]) continue
+            dp[newStatus] = newSize
+            parent[newStatus] = status
+            choose[newStatus] = p.index
+        }
+    }
+    val ans = mutableListOf<Int>()
+    var mask = limit - 1
+    while (mask > 0) {
+        ans.add(choose[mask])
+        mask = parent[mask]
+    }
+    println(dp[limit - 1])
+    return ans.toIntArray()
+}
+
+fun maxScoreWords(words: Array<String>, letters: CharArray, score: IntArray): Int {
+    val scoreMap = mutableMapOf<Char, MutableList<Int>>()
+    for (i in 0 until letters.size) {
+        val ch = letters[i]
+        val s = score[i]
+        scoreMap.computeIfAbsent(ch) { mutableListOf<Int>() }.add(s)
+    }
+
+    var ans = 0
+    for (word in words) {
+        for (c in word) {
+            val s = scoreMap[c]?.maxOrNull() ?: 0
+            ans += s
+        }
+    }
+    return ans
+}
+
+fun minOperations4(nums: IntArray): Int {
+    val n = nums.size
+    var cnt = 0
+    for (i in 0 until n - 2) {
+        if (nums[i] == 1) continue
+        nums[i] = 1
+        nums[i + 1] = 1 xor nums[i + 1]
+        nums[i + 2] = 1 xor nums[i + 2]
+        cnt++
+    }
+    return if (nums[n - 2] == 1 && nums[n - 1] == 1) cnt else -1
+}
+
+fun minEnd(n: Int, x: Int): Long {
+    var num = x.toLong()
+    var m = n - 1
+    var i = 0
+    while (m > 0) {
+        if (((num shr i) and 1L) == 0L) {
+            if ((m and 1) == 1) {
+                num = num or (1L shl i)
+            }
+            m = m shr 1
+        }
+        i++
+    }
+    return num
+}
+
+fun uniqueXorTriplets(nums: IntArray): Int {
+    val basis = IntArray(32)
+
+    for (num in nums) {
+        var x = num
+        for (i in 31 downTo 0) {
+            if (x and (1 shl i) == 0) continue
+            if (basis[i] == 0) {
+                basis[i] = x
+                continue
+            }
+            x = x xor basis[i]
+        }
+    }
+
+    val set = mutableSetOf<Int>()
+    for (i in 0 until 30) {
+        for (j in i + 1 until 31) {
+            for (k in j + 1 until 32) {
+                val value = basis[i] xor basis[j] xor basis[k]
+                set.add(value)
+            }
+        }
+    }
+    return set.size
+}
+
 fun main() {
     println(
-        println(totalHammingDistance(intArrayOf(4, 14, 2)))
+        minEnd(2, 7)
     )
 }

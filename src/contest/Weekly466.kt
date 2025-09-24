@@ -4,7 +4,7 @@ import remote.MonotonicStackInt
 import java.util.Stack
 
 class Weekly466 {
-    fun minOperations(nums: IntArray): Int {
+    fun minOperations1(nums: IntArray): Int {
         val isSame = nums.toSet().size == 1
         return if (isSame) 0 else 1
     }

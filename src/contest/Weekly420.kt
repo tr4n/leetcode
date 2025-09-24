@@ -62,7 +62,7 @@ class Weekly420 {
         return cnt
     }
 
-    fun minOperations(nums: IntArray): Int {
+    fun minOperations1(nums: IntArray): Int {
         val n = nums.size
         if (n == 1) return 0
         val limit = nums.max()
