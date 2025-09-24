@@ -1096,8 +1096,34 @@ fun uniqueXorTriplets(nums: IntArray): Int {
     return set.size
 }
 
+fun checkEqualPartitions(nums: IntArray, target: Long): Boolean {
+    val n = nums.size
+    val allProd = nums.fold(1L) { acc, item -> acc * item.toLong() }
+    if (allProd != target * target) {
+        return false
+    }
+
+    val limit = (1 shl n)
+
+    for (status in 1 until limit) {
+        var first = 1L
+        var second = 1L
+        for (j in 0 until n) {
+            val bit = (status shr j) and 1
+            val num = nums[j].toLong()
+            if (bit == 0) first *= num else second *= num
+        }
+      //  println("${status.toString(2)} $first $second")
+        if (first == target && second == target) return true
+    }
+    return false
+}
+
 fun main() {
     println(
-        minEnd(2, 7)
+       checkEqualPartitions(
+           intArrayOf(3,1,6,8,4),
+           24
+       )
     )
 }
