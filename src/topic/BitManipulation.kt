@@ -1022,21 +1022,47 @@ fun smallestSufficientTeam(req_skills: Array<String>, people: List<List<String>>
     return ans.toIntArray()
 }
 
-fun maxScoreWords(words: Array<String>, letters: CharArray, score: IntArray): Int {
-    val scoreMap = mutableMapOf<Char, MutableList<Int>>()
-    for (i in 0 until letters.size) {
-        val ch = letters[i]
-        val s = score[i]
-        scoreMap.computeIfAbsent(ch) { mutableListOf<Int>() }.add(s)
+fun maxScoreWords(words: Array<String>, letters: CharArray, scores: IntArray): Int {
+
+    val charCount = IntArray(26)
+
+    for (i in letters.indices) {
+        val index = letters[i] - 'a'
+        charCount[index]++
     }
 
+    val wordMap = words.map { word ->
+        word.groupingBy { it - 'a' }.eachCount()
+    }
+
+    val n = words.size
     var ans = 0
-    for (word in words) {
-        for (c in word) {
-            val s = scoreMap[c]?.maxOrNull() ?: 0
-            ans += s
+
+    fun dfs(pos: Int, score: Int) {
+        if (pos == n) {
+            ans = maxOf(ans, score)
+            return
+        }
+
+        dfs(pos + 1, score)
+
+        val word = wordMap[pos]
+        val hasEnoughChars = word.all { (i, cnt) ->
+            charCount[i] >= cnt
+        }
+        if (!hasEnoughChars) return
+        var newScore = score
+        for ((i, cnt) in word) {
+            charCount[i] -= cnt
+            newScore += scores[i] * cnt
+        }
+        dfs(pos + 1, newScore)
+        for ((i, cnt) in word) {
+            charCount[i] += cnt
         }
     }
+
+    dfs(0, 0)
     return ans
 }
 
@@ -1113,17 +1139,220 @@ fun checkEqualPartitions(nums: IntArray, target: Long): Boolean {
             val num = nums[j].toLong()
             if (bit == 0) first *= num else second *= num
         }
-      //  println("${status.toString(2)} $first $second")
+        //  println("${status.toString(2)} $first $second")
         if (first == target && second == target) return true
     }
     return false
 }
 
+fun countPalindromePaths(parent: List<Int>, s: String): Long {
+    val n = parent.size
+
+    val graph = Array(n) { mutableListOf<Int>() }
+    for (i in 0 until n) {
+        val p = parent[i]
+        if (p != -1) graph[p].add(i)
+    }
+
+    val seen = mutableMapOf<Int, Long>()
+    //  seen[0] = 1L
+
+    var ans = 0L
+
+    fun dfs(u: Int, status: Int) {
+        val cnt = 1L + (seen[status] ?: 0L)
+        seen[status] = cnt
+        ans += cnt
+
+        for (c in 0 until 26) {
+            val mask = 1 shl c
+            ans += seen[status xor mask] ?: 0L
+        }
+
+
+        for (v in graph[u]) {
+            val mask = 1 shl (s[v] - 'a')
+            dfs(v, status xor mask)
+        }
+        //  seen[status] = cnt - 1L
+    }
+    dfs(0, 0)
+    //  println(seen)
+    return ans - n
+}
+
+fun maximumRequests(n: Int, requests: Array<IntArray>): Int {
+    val m = requests.size
+    val buildings = IntArray(n)
+
+    var ans = 0
+
+    fun dfs(pos: Int, mask: Int) {
+        if (pos == m) {
+            if (buildings.all { it == 0 }) {
+                ans = maxOf(ans, mask.countOneBits())
+            }
+            return
+        }
+
+        val newMask = mask or (1 shl pos)
+        val from = requests[pos][0]
+        val to = requests[pos][1]
+        buildings[from]--
+        buildings[to]++
+        dfs(pos + 1, newMask)
+        buildings[from]++
+        buildings[to]--
+
+        dfs(pos + 1, mask)
+    }
+    dfs(0, 0)
+    return ans
+}
+
+fun minimumOneBitOperations(n: Int): Int {
+    if (n == 0) return 0
+    val k = 32 - n.countLeadingZeroBits()
+    val r = n - (1 shl (k - 1))
+    val sub = minimumOneBitOperations(r)
+    return (1 shl k) - 1 - sub
+}
+
+fun maxStudents(seats: Array<CharArray>): Int {
+    val m = seats.size
+    val n = seats[0].size
+
+    val allowed = IntArray(m)
+    for (i in 0 until m) {
+        var mask = 0
+        for (j in 0 until n) {
+            if (seats[i][j] == '.') {
+                mask = mask or (1 shl j)
+            }
+        }
+        allowed[i] = mask
+    }
+
+    val memo = mutableMapOf<Pair<Int, Int>, Int>()
+
+    fun dfs(row: Int, prevMask: Int): Int {
+        if (row == m) return 0
+        val key = row to prevMask
+        if (key in memo) return memo[key]!!
+
+        var best = 0
+
+        val limit = 1 shl n
+        for (mask in 0 until limit) {
+            if ((mask and allowed[row]) != mask) continue
+            if ((mask and (mask shl 1)) != 0) continue
+            if ((mask and (prevMask shl 1)) != 0) continue
+            if ((mask and (prevMask shr 1)) != 0) continue
+
+            val cur = mask.countOneBits() + dfs(row + 1, mask)
+            best = maxOf(best, cur)
+        }
+
+        memo[key] = best
+        return best
+    }
+
+    return dfs(0, 0)
+}
+
+fun findDuplicate(nums: IntArray): Int {
+    var slow = nums[0]
+    var fast = nums[nums[0]]
+    while (slow != fast) {
+        slow = nums[slow]
+        fast = nums[nums[fast]]
+    }
+
+    slow = 0
+    while (slow != fast) {
+        slow = nums[slow]
+        fast = nums[fast]
+    }
+    return slow
+}
+
+fun wonderfulSubstrings(word: String): Long {
+    val n = word.length
+    val seen = mutableMapOf<Int, Long>()
+    seen[0] = 1L
+    var status = 0
+    var count = 0L
+    for (i in 0 until n) {
+        val mask = 1 shl (word[i] - 'a')
+        status = status xor mask
+
+        val cnt = seen[status] ?: 0L
+        count += cnt
+
+
+        for (c in 0 until 10) {
+            val oddMask = 1 shl c
+            val oddStatus = status xor oddMask
+            count += (seen[oddStatus] ?: 0L)
+        }
+        seen[status] = cnt + 1
+    }
+    return count
+}
+
+fun minimumXORSum(nums1: IntArray, nums2: IntArray): Int {
+    val n = nums2.size
+    val limit = 1 shl n
+    val dp = Array(n + 1) { IntArray(limit) { Int.MAX_VALUE } }
+    dp[0][0] = 0
+    for (i in 0 until n) {
+        val num = nums1[i]
+
+        for (mask in 0 until limit) {
+            if (dp[i][mask] == Int.MAX_VALUE) continue
+
+            for (j in 0 until n) {
+                if ((mask shr j) and 1 == 1) continue
+                val newMask = mask or (1 shl j)
+                val newSum = dp[i][mask] + (num xor nums2[j])
+                dp[i + 1][newMask] = minOf(dp[i + 1][newMask], newSum)
+            }
+        }
+    }
+    return dp[n][limit - 1]
+}
+
+fun singleNumber2(nums: IntArray): Int {
+    var ans = 0
+    for (i in 0 until 32) {
+        var oneCount = 0
+        for (num in nums) {
+            oneCount += (num shr i) and 1
+        }
+        val bit = oneCount % 3
+        ans = ans or (bit shl i)
+    }
+    return ans
+}
+
+fun singleNumber3(nums: IntArray): IntArray {
+    val totalXor = nums.fold(0, Int::xor)
+    val lowestDiffBit = totalXor and (-totalXor)
+
+    var first = 0
+
+    for (num in nums) {
+        if (num and lowestDiffBit != 0) {
+            first = first xor num
+        }
+    }
+    val second = totalXor xor first
+    return intArrayOf(first, second)
+}
+
+
 fun main() {
     println(
-       checkEqualPartitions(
-           intArrayOf(3,1,6,8,4),
-           24
-       )
+        wonderfulSubstrings("aabb")
     )
 }
