@@ -880,7 +880,7 @@ fun minOperations(nums: List<Int>, target: Int): Int {
     return cnt
 }
 
-fun maxSubarrays(nums: IntArray): Int {
+fun maxSubarrays2(nums: IntArray): Int {
     val n = nums.size
     val table = ANDSparseTable(nums)
 
@@ -1350,6 +1350,98 @@ fun singleNumber3(nums: IntArray): IntArray {
     return intArrayOf(first, second)
 }
 
+
+fun maxSubarrays(nums: IntArray): Int {
+    val n = nums.size
+
+    val totalAND = nums.reduce { acc, i -> acc and i }
+
+    var pos = -1
+    if (totalAND != 0) {
+        var minAND = 1
+        for (i in 0 until n) {
+            minAND = minAND and nums[i]
+            if (minAND == totalAND) {
+                pos = i
+                break
+            }
+        }
+    }
+    if (pos == n - 1) return 1
+    println(pos)
+    var cnt = 0
+    var andValue = -1
+    for (i in pos + 1 until n) {
+        if (andValue == 0) {
+            cnt++
+            andValue = nums[i]
+            //      println("$cnt ${i-1}")
+        }
+        andValue = andValue and nums[i]
+    }
+    if (andValue == 0) cnt++
+    if (pos >= 0) cnt++
+    //  println(cnt)
+    return cnt
+}
+
+
+fun maxProduct(words: Array<String>): Int {
+    val masks = words.map { word ->
+        var mask = 0
+        for (c in word) {
+            val bit = c - 'a'
+            mask = mask or (1 shl bit)
+        }
+        mask
+    }
+    val n = masks.size
+    var ans = 0
+    for (i in 0 until n - 1) {
+        for (j in i + 1 until n) {
+            if (masks[i] and masks[j] == 0) {
+                ans = maxOf(ans, words[i].length * words[j].length)
+            }
+        }
+    }
+    return ans
+}
+
+fun maxProduct(s: String): Int {
+    fun longestPalindromeSubseq(str: String): Int {
+        val length = str.length
+        if (length == 0) return 0
+        val dp = Array(length) { IntArray(length) }
+        for (i in length - 1 downTo 0) {
+            dp[i][i] = 1
+            for (j in i + 1 until length) {
+                if (str[i] == str[j]) {
+                    dp[i][j] = dp[i + 1][j - 1] + 2
+                } else {
+                    dp[i][j] = maxOf(dp[i + 1][j], dp[i][j - 1])
+                }
+            }
+        }
+        return dp[0][length - 1]
+    }
+
+    val n = s.length
+
+    val limit = 1 shl n
+    var ans = 0
+    for (mask in 1 until limit - 1) {
+        val first = StringBuilder()
+        val second = StringBuilder()
+        for (i in 0 until n) {
+            val bit = (mask shr i) and 1
+            if (bit == 0) first.append(s[i]) else second.append(s[i])
+        }
+        val firstLength = longestPalindromeSubseq(first.toString())
+        val secondLength = longestPalindromeSubseq(second.toString())
+        ans = maxOf(ans, firstLength * secondLength)
+    }
+    return ans
+}
 
 fun main() {
     println(

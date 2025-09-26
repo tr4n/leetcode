@@ -1213,6 +1213,10 @@ fun minOperations2(nums: IntArray, k: Int): Int {
     return cnt
 }
 
+fun rotate(nums: IntArray, k: Int): Unit {
+
+}
+
 fun main() {
 //    println(
 //        maxProduct(intArrayOf(9, 2, 19))
