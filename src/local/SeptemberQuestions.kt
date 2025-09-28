@@ -1214,7 +1214,50 @@ fun minOperations2(nums: IntArray, k: Int): Int {
 }
 
 fun rotate(nums: IntArray, k: Int): Unit {
+    val n = nums.size
+    val pos = (k) % n
+    val ans = IntArray(n)
+    for (i in 0 until n) {
+        ans[(i + pos + n) % n] = nums[i]
+    }
+    for (i in 0 until n) nums[i] = ans[i]
+    println(nums.toList())
+}
 
+fun countPrimes(n: Int): Int {
+    val isPrime = BooleanArray(n + 1)
+    isPrime[0] = false
+    isPrime[1] = false
+
+    for (i in 4..n step 2) isPrime[i] = false
+
+    for (p in 3..sqrt(n.toDouble()).toInt() step 2) {
+        if (!isPrime[p]) continue
+        for (i in p * p..n step p) {
+            isPrime[i] = false
+        }
+    }
+    return isPrime.count { it }
+}
+
+fun fourSumCount(nums1: IntArray, nums2: IntArray, nums3: IntArray, nums4: IntArray): Int {
+    val sumMap = mutableMapOf<Long, Int>()
+    for (a in nums3) {
+        for (b in nums4) {
+            val sum = a.toLong() + b.toLong()
+            val cnt = sumMap[sum] ?: 0
+            sumMap[sum] = cnt + 1
+        }
+    }
+
+    var ans = 0
+    for(a in nums1) {
+        for(b in nums2) {
+            val sum = a.toLong() + b.toLong()
+            ans += sumMap[-sum] ?: 0
+        }
+    }
+    return ans
 }
 
 fun main() {
@@ -1222,6 +1265,6 @@ fun main() {
 //        maxProduct(intArrayOf(9, 2, 19))
 //    )
     println(
-        closestPrimes(10, 19).toList()
+        rotate(intArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 3)
     )
 }

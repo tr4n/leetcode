@@ -1443,6 +1443,84 @@ fun maxProduct(s: String): Int {
     return ans
 }
 
+fun matrixScore(grid: Array<IntArray>): Int {
+    val m = grid.size
+    val n = grid[0].size
+
+    val rows = IntArray(m)
+    val cols = IntArray(n)
+
+    for (i in 0 until m) {
+        for (j in 0 until n) {
+            rows[i] = rows[i] or (grid[i][j] shl (n - 1 - j))
+            cols[j] = cols[j] or (grid[i][j] shl (m - 1 - i))
+        }
+    }
+
+    for (i in 0 until m) {
+        if (grid[i][0] == 0) {
+            rows[i] = rows[i] xor ((1 shl n) - 1)
+            for (j in 0 until n) {
+                cols[j] = cols[j] xor (1 shl (m - 1 - i))
+            }
+        }
+    }
+
+    for (j in 0 until n) {
+        val num = cols[j]
+        val oneCount = num.countOneBits()
+        if (oneCount < m - oneCount) {
+            cols[j] = cols[j] xor ((1 shl m) - 1)
+            for (i in 0 until m) {
+                rows[i] = rows[i] xor (1 shl (n - 1 - j))
+            }
+        }
+    }
+    return rows.sum()
+}
+
+fun numberOfGoodSubsets(nums: IntArray): Int {
+    val mod = 1_000_000_007L
+    val primes = intArrayOf(2, 3, 5, 7, 11, 13, 17, 19, 23, 29)
+    var cnt1 = nums.count { it == 1 }
+    val counts = nums.filterNot { num ->
+        num == 1 || primes.any { num % (it * it) == 0 }
+    }.map { num ->
+        var binary = 0
+        for (i in 0 until primes.size) {
+            if (num % primes[i] == 0) {
+                binary = binary or (1 shl i)
+            }
+        }
+        binary
+    }.groupingBy { it }.eachCount()
+
+    val maxMask = (1 shl (primes.size))
+    val dp = LongArray(maxMask)
+    dp[0] = 1L
+
+    for ((num, cnt) in counts) {
+        for (mask in (maxMask - 1) downTo 0) {
+            if (dp[mask] <= 0) continue
+            if (num and mask != 0) continue
+            val newMask = num or mask
+            dp[newMask] = (dp[newMask] + dp[mask] * cnt) % mod
+
+        }
+    }
+
+    var ans = 0L
+    for (mask in 1 until maxMask) {
+        ans = (ans + dp[mask]) % mod
+    }
+
+    var pow2 = 1L
+    while (cnt1-- > 0) pow2 = (pow2 * 2) % mod
+    ans = (ans * pow2) % mod
+  //  ans = (ans - 1 + mod) % mod
+    return ans.toInt()
+}
+
 fun main() {
     println(
         wonderfulSubstrings("aabb")
