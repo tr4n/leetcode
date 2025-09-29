@@ -871,7 +871,7 @@ fun maxFrequencyElements(nums: IntArray): Int {
 
 fun fractionToDecimal(numerator: Int, denominator: Int): String {
 
-    if(numerator == 0) return "0"
+    if (numerator == 0) return "0"
     val builder = StringBuilder()
     val isNegative = (numerator >= 0) xor (denominator > 0)
     if (isNegative) builder.append("-")
@@ -900,6 +900,54 @@ fun fractionToDecimal(numerator: Int, denominator: Int): String {
     }
 
     return builder.toString()
+}
+
+fun triangleNumber(nums: IntArray): Int {
+    val n = nums.size
+    nums.sort()
+
+    fun countInRange(start: Int, end: Int): Int {
+        var l = 0
+        var r = n - 1
+        var lo = n
+        while (l <= r) {
+            val mid = (l + r) ushr 1
+            if (nums[mid] > start) {
+                lo = mid
+                r = mid - 1
+            } else {
+                l = mid + 1
+            }
+        }
+
+        l = 0
+        r = n - 1
+        var hi = n
+        while (l <= r) {
+            val mid = (l + r) ushr 1
+            if (nums[mid] >= end) {
+                hi = mid
+                r = mid - 1
+            } else {
+                l = mid + 1
+            }
+        }
+
+        return hi - lo
+    }
+
+    var ans = 0L
+    for (i in 0 until n - 1) {
+        for (j in i + 1 until n) {
+            val a = nums[i]
+            val b = nums[j]
+            var cCount = countInRange(b - a, b + a).toLong()
+            if (a > b - a && a < b + a) cCount--
+            if (b > b - a && b < b + a) cCount--
+            if (cCount > 0) ans += cCount
+        }
+    }
+    return (ans / 3L).toInt()
 }
 
 fun main() {

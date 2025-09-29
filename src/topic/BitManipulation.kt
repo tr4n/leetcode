@@ -1350,6 +1350,149 @@ fun singleNumber3(nums: IntArray): IntArray {
     return intArrayOf(first, second)
 }
 
+fun canSortArray(nums: IntArray): Boolean {
+    var setBit = nums[0].countOneBits()
+    var prevMax = -1
+    var currentMin = nums[0]
+    var currentMax = nums[0]
+    for (i in 1 until nums.size) {
+        val num = nums[i]
+        val bitCount = num.countOneBits()
+        if (bitCount != setBit) {
+            setBit = bitCount
+            if (currentMin < prevMax) return false
+            prevMax = currentMax
+            currentMin = num
+            currentMax = num
+        }
+        currentMin = minOf(currentMin, num)
+        currentMax = maxOf(currentMax, num)
+    }
+    return currentMin >= prevMax
+}
+
+fun queryString(s: String, n: Int): Boolean {
+    val length = s.length
+    val maxBits = 32 - n.countLeadingZeroBits()
+    if (length < maxBits) return false
+    println("maxBits = $maxBits")
+
+    for (k in 1..maxBits) {
+        val low = 1 shl (k - 1)
+        val high = (1 shl k) - 1
+        val targetCount = (minOf(n, high) - low + 1).coerceAtLeast(0)
+        if (targetCount == 0) continue
+
+        val seen = mutableSetOf<Int>()
+        var num = s.takeLast(k).toInt(2)
+        if (num in low..n) seen.add(num)
+
+        var i = length - k - 1
+        while (i >= 0) {
+            val bit = s[i--] - '0'
+            num = (num shr 1) or (bit shl (k - 1))
+            if (num in low..n) seen.add(num)
+            if (seen.size == targetCount) break
+            //  println(num.toString(2))
+        }
+        if (seen.size < targetCount) return false
+    }
+    return true
+}
+
+fun prefixesDivBy5(nums: IntArray): List<Boolean> {
+    var num = 0
+    val ans = mutableListOf<Boolean>()
+    for (bit in nums) {
+        num = ((num shl 1) or bit) % 10
+        ans.add(num % 5 == 0)
+    }
+    return ans
+}
+
+fun findNumOfValidWords(words: Array<String>, puzzles: Array<String>): List<Int> {
+    val puzzleToMask = mutableMapOf<String, Int>()
+    val puzzleGroups = mutableMapOf<Int, MutableSet<Int>>()
+    val counts = mutableMapOf<Pair<Int, Int>, Int>()
+
+    fun createMask(s: String): Int {
+        var mask = 0
+        for (c in s) {
+            val bit = c - 'a'
+            mask = mask or (1 shl bit)
+        }
+        return mask
+    }
+
+    for (puzzle in puzzles) {
+        val id = puzzle[0] - 'a'
+        val mask = createMask(puzzle)
+        puzzleToMask[puzzle] = mask
+        puzzleGroups.computeIfAbsent(id) { mutableSetOf() }.add(mask)
+    }
+
+    for (word in words) {
+        val num = createMask(word)
+        val popCount = num.countOneBits()
+        if (popCount > 7) continue
+
+        for (id in 0 until 26) {
+            if ((num shr id) and 1 == 0) continue
+
+            val masks = puzzleGroups[id] ?: continue
+            for (mask in masks) {
+                if (mask or num != mask) continue
+                val key = id to mask
+                counts[key] = (counts[key] ?: 0) + 1
+            }
+        }
+    }
+
+
+    return puzzles.map { puzzle ->
+        val id = puzzle[0] - 'a'
+        val mask = puzzleToMask[puzzle] ?: return@map 0
+        counts[id to mask] ?: 0
+    }
+}
+
+fun minFlips(a: Int, b: Int, c: Int): Int {
+    var cnt = 0
+    for (i in 0 until 32) {
+        val bitA = (a shr i) and 1
+        val bitB = (b shr i) and 1
+        val bitC = (c shr i) and 1
+        cnt += when {
+            bitC == 0 -> bitA + bitB
+            bitA == 0 && bitB == 0 -> 1
+            else -> 0
+        }
+    }
+    return cnt
+}
+
+fun sortByBits(arr: IntArray): IntArray {
+    return arr.sortedBy { it.countOneBits() * 100000 + it }.toIntArray()
+}
+
+fun numSteps(s: String): Int {
+    val str = s.trimStart('0')
+    val n = str.length
+    var cnt = 0
+    var carry = 0
+    var i = n - 1
+    while (i > 0) {
+        val bit = (str[i] - '0')  + carry
+
+        if(bit and 1 != 0) {
+            cnt ++
+            carry = 1
+        }
+        cnt++
+        i--
+    }
+    return cnt + carry
+}
 
 fun maxSubarrays(nums: IntArray): Int {
     val n = nums.size
@@ -1523,6 +1666,6 @@ fun numberOfGoodSubsets(nums: IntArray): Int {
 
 fun main() {
     println(
-        wonderfulSubstrings("aabb")
+        queryString("0", 1)
     )
 }
