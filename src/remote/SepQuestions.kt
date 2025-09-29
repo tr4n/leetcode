@@ -950,9 +950,35 @@ fun triangleNumber(nums: IntArray): Int {
     return (ans / 3L).toInt()
 }
 
+fun minScoreTriangulation(values: IntArray): Int {
+    val n = values.size
+    val memo = Array(n) { IntArray(n) { Int.MAX_VALUE } }
+    for (i in 0 until n) {
+        memo[i][i] = 0
+        if (i < n - 1) memo[i][i + 1] = 0
+        if (i < n - 2) memo[i][i + 2] = values[i] * values[i + 2] * values[i + 2]
+    }
+
+    fun dp(start: Int, end: Int): Int {
+        if (end - start < 2) return 0
+        if (end - start == 2) return values[start] * values[start + 1] * values[start + 2]
+        if (memo[start][end] != Int.MAX_VALUE) return memo[start][end]
+
+        var ans = Int.MAX_VALUE
+        for (k in start + 1 until end) {
+            val value = values[start] * values[end] * values[k]
+            ans = minOf(ans, dp(start, k) + dp(k, end) + value)
+        }
+        memo[start][end] = ans
+        return ans
+    }
+
+    return dp(0, n - 1)
+}
+
 fun main() {
 
     println(
-        fractionToDecimal(1, 3)
+        minScoreTriangulation(intArrayOf(1, 3, 1, 4, 1, 5))
     )
 }

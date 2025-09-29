@@ -1,6 +1,7 @@
 package topic
 
 import remote.ANDSparseTable
+import kotlin.math.abs
 
 class LongBasisXor(private val maxBits: Int = Long.SIZE_BITS) {
     private val basis = LongArray(maxBits)
@@ -380,7 +381,7 @@ fun countPairs(nums: IntArray, low: Int, high: Int): Int {
     return 0
 }
 
-fun countTriplets(arr: IntArray): Int {
+fun countTriplets2(arr: IntArray): Int {
     val n = arr.size
     val prefix = IntArray(n + 1)
     for (i in 0 until n) prefix[i + 1] = prefix[i] xor arr[i]
@@ -1482,10 +1483,10 @@ fun numSteps(s: String): Int {
     var carry = 0
     var i = n - 1
     while (i > 0) {
-        val bit = (str[i] - '0')  + carry
+        val bit = (str[i] - '0') + carry
 
-        if(bit and 1 != 0) {
-            cnt ++
+        if (bit and 1 != 0) {
+            cnt++
             carry = 1
         }
         cnt++
@@ -1660,12 +1661,237 @@ fun numberOfGoodSubsets(nums: IntArray): Int {
     var pow2 = 1L
     while (cnt1-- > 0) pow2 = (pow2 * 2) % mod
     ans = (ans * pow2) % mod
-  //  ans = (ans - 1 + mod) % mod
+    //  ans = (ans - 1 + mod) % mod
     return ans.toInt()
 }
 
+fun maximizeXorAndXor2(nums: IntArray): Long {
+    val n = nums.size
+    var best = Long.MIN_VALUE
+    val list = mutableListOf<Long>()
+    fun maxXorSplit(numbers: List<Long>): Long {
+        if (numbers.isEmpty()) return 0L
+        val total = numbers.reduce { a, b -> a xor b }
+        val basis = LongArray(32)
+
+        for (num0 in numbers) {
+            var num = num0
+            for (bit in 31 downTo 0) {
+                if (((num shr bit) and 1L) == 0L) continue
+                if (basis[bit] == 0L) {
+                    basis[bit] = num
+                    break
+                }
+                num = num xor basis[bit]
+            }
+        }
+
+        var best = 0L
+
+        for (bit in 31 downTo 0) {
+            val b = basis[bit]
+            if (b == 0L) continue
+            val cand = best xor b
+            if (cand + (total xor cand) > best + (total xor best)) {
+                best = cand
+            }
+        }
+
+        return (best + (total xor best)).toLong()
+    }
+
+    fun backtrack(pos: Int, andC: Long) {
+        if (pos == n) {
+            val valAB = maxXorSplit(list)
+            val total = valAB.toLong() + andC.toLong()
+            if (total > best) best = total
+            return
+        }
+        val num = nums[pos].toLong()
+        backtrack(pos + 1, andC and num)
+        list.add(num)
+        backtrack(pos + 1, andC)
+        list.removeLast()
+    }
+
+    backtrack(0, -1)
+    return best
+}
+
+fun maximizeXorAndXor(nums: IntArray): Long {
+    val n = nums.size
+    var best = Long.MIN_VALUE
+    val k = 4
+
+    fun backtrack(pos: Int, xorA: Int, andB: Int, xorC: Int, cntB: Int) {
+        if (pos == n) {
+            val total = xorA.toLong() + xorC.toLong() +
+                    if (cntB > 0) andB.toLong() else 0L
+            best = maxOf(best, total)
+            return
+        }
+
+        val num = nums[pos]
+
+        backtrack(pos + 1, xorA, andB, xorC xor num, cntB)
+
+        backtrack(pos + 1, xorA xor num, andB, xorC, cntB)
+
+        if (cntB < k) {
+            val newAnd = if (cntB == 0) num else andB and num
+            backtrack(pos + 1, xorA, newAnd, xorC, cntB + 1)
+        }
+    }
+
+    backtrack(0, 0, -1, 0, 0)
+    return best
+}
+
+fun divide(dividend: Int, divisor: Int): Int {
+    val isNegative = (dividend < 0) xor (divisor < 0)
+    val a = abs(dividend.toLong())
+    val b = abs(divisor.toLong())
+
+    val msb = 63 - a.countLeadingZeroBits()
+    var remainder = 0L
+    var ans = 0L
+    for (i in msb downTo 0) {
+        val bit = (a shr i) and 1
+        remainder = (remainder shl 1) or bit
+        if (remainder >= b) {
+            remainder -= b
+            ans = ans or (1L shl i)
+        }
+    }
+    if (isNegative) ans = -ans
+    return ans.coerceIn(Int.MIN_VALUE.toLong(), Int.MAX_VALUE.toLong()).toInt()
+}
+
+fun addBinary(a: String, b: String): String {
+    var first = a.length - 1
+    var second = b.length - 1
+    val ans = StringBuilder()
+    var carry = 0
+
+    while (first >= 0 || second >= 0 || carry > 0) {
+        val bitA = if (first >= 0) a[first--].digitToInt() else 0
+        val bitB = if (second >= 0) b[second--].digitToInt() else 0
+        val value = bitA + bitB + carry
+        val bit = value and 1
+        carry = value shr 1
+        ans.append(bit)
+    }
+    return ans.reversed().toString()
+}
+
+fun countTriplets(nums: IntArray): Int {
+    val n = nums.size
+    val pairs = mutableMapOf<Int, Int>()
+    val numbers = nums.toList().groupingBy { it }.eachCount()
+    for (i in 0 until n) {
+        for (j in 0 until n) {
+            val value = nums[i] and nums[j]
+            val count = pairs[value] ?: 0
+            pairs[value] = count + 1
+        }
+    }
+
+    var cnt = 0
+
+    for ((pair, pairCount) in pairs) {
+        for ((num, numCount) in numbers) {
+            if (pair and num == 0) {
+                cnt += pairCount * numCount
+            }
+        }
+    }
+
+    return cnt
+}
+
+fun minChanges(nums: IntArray, k: Int): Int {
+    val n = nums.size
+    var ans = n
+
+    for (start in 0..n - k) {
+        var windowXor = 0
+        for (i in start until start + k) windowXor = windowXor xor nums[i]
+
+        val replacedNum = nums[start] xor windowXor
+        var count = if (replacedNum == nums[start]) 0 else 1
+
+        for (i in 0 until n) {
+            val index = (i - start + k * n) % k + start
+            val expected = if (index == start) replacedNum else nums[index]
+            if (nums[i] != expected) count++
+        }
+
+        ans = minOf(ans, count)
+    }
+
+    return ans
+}
+
+fun maxProduct(nums: IntArray): Long {
+    class Node {
+        var left: Node? = null
+        var right: Node? = null
+    }
+
+    val root = Node()
+    fun insert(num: Int) {
+        var node = root
+        for (i in 31 downTo 0) {
+            val bit = (num shr i) and 1
+            if (bit == 0) {
+                if (node.left == null) node.left = Node()
+                node = node.left!!
+            } else {
+                if (node.right == null) node.right = Node()
+                node = node.right!!
+            }
+        }
+    }
+
+    fun dfs(num: Int, node: Node, i: Int, result: Int): Int {
+        if (i < 0) return result
+
+        val bit = (num shr i) and 1
+        val left = node.left
+        val right = node.right
+        when {
+            bit == 1 && left != null -> {
+                return dfs(num, left, i - 1, result)
+            }
+
+            bit == 1 -> return -1
+        }
+
+        var maxNum = -1
+        if (right != null) {
+            maxNum = maxOf(maxNum, dfs(num, right, i - 1, result or (1 shl i)))
+        }
+        if (left != null) {
+            maxNum = maxOf(maxNum, dfs(num, left, i - 1, result))
+        }
+        return maxNum
+    }
+
+    var ans = 0L
+    val n = nums.size
+    nums.sortDescending()
+    for (num in nums) {
+        val other = dfs(num, root, 31, 0)
+        if (other > 0) ans = maxOf(ans, num.toLong() * other.toLong())
+        insert(num)
+       // if (ans > 0) return ans
+    }
+    return ans
+}
+
+
 fun main() {
     println(
-        queryString("0", 1)
+        maxProduct(intArrayOf(1, 2, 3, 4, 5, 6, 7))
     )
 }
