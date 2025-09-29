@@ -1880,18 +1880,61 @@ fun maxProduct(nums: IntArray): Long {
     var ans = 0L
     val n = nums.size
     nums.sortDescending()
+    var maxNumSoFar = -1
     for (num in nums) {
+        if (ans > 0 && maxNumSoFar > 0 && maxNumSoFar * num <= ans) return ans
         val other = dfs(num, root, 31, 0)
         if (other > 0) ans = maxOf(ans, num.toLong() * other.toLong())
         insert(num)
-       // if (ans > 0) return ans
+        maxNumSoFar = maxOf(maxNumSoFar, num)
     }
     return ans
 }
 
+fun maxHappyGroups(batchSize: Int, groups: IntArray): Int {
+    // dp[rem]
+    val n = groups.size
+    val k = batchSize
+//    val dp = Array(n + 1) { IntArray(k) { -1 } }
+//    dp[0][0] = 0
+//
+//    for (i in 0 until n) {
+//        val num = groups[i]
+//        for (r in 0 until k) {
+//            if (dp[i][r] == -1) continue
+//            val rem = (r + num) % k
+//            val newValue = dp[i][r] + if (rem == 0) 1 else 0
+//            dp[i + 1][rem] = maxOf(dp[i + 1][rem], newValue)
+//        }
+//    }
+//    println(dp[n].toList())
+//    return dp[n].max()
+
+    val remainders = IntArray(k)
+    for (num in groups) {
+        remainders[num % k]++
+    }
+
+    var count = 0
+    count += remainders[0]
+
+    for (i in 1..k / 2) {
+        if (i * 2 == k) {
+            count += remainders[i] / 2
+            remainders[i] %= 2
+        } else {
+            val cnt = minOf(remainders[i], remainders[k - i])
+            count += cnt
+            remainders[i] -= cnt
+            remainders[k - i] -= cnt
+        }
+    }
+
+    return count
+}
 
 fun main() {
     println(
-        maxProduct(intArrayOf(1, 2, 3, 4, 5, 6, 7))
+        maxHappyGroups(4, intArrayOf(1, 3, 2, 5, 2, 2, 1, 6))
     )
 }

@@ -555,31 +555,3 @@ fun solveEquation(equation: String): String {
         else -> "${b / a}"
     }
 }
-
-fun maximizeXorAndXor(nums: IntArray): Long {
-    val n = nums.size
-    val basis = IntArray(32)
-    for (num in nums) {
-        var x = num
-        for (i in 31 downTo 0) {
-            if (x and (1 shl i) == 0) continue
-            if (basis[i] == 0) {
-                basis[i] = x
-                break
-            }
-            x = x xor basis[i]
-        }
-    }
-
-    val all = mutableListOf<Int>(0)
-    for (b in basis) {
-        if (b == 0) continue
-        val size = all.size
-        for (i in 0 until size) {
-            all.add(all[i] xor b)
-        }
-    }
-
-
-    return 0
-}
