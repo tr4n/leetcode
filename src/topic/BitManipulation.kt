@@ -1893,7 +1893,7 @@ fun maxProduct(nums: IntArray): Long {
 
 fun maxHappyGroups(batchSize: Int, groups: IntArray): Int {
     // dp[rem]
-    val n = groups.size
+ //   val n = groups.size
     val k = batchSize
 //    val dp = Array(n + 1) { IntArray(k) { -1 } }
 //    dp[0][0] = 0
@@ -1930,11 +1930,31 @@ fun maxHappyGroups(batchSize: Int, groups: IntArray): Int {
         }
     }
 
-    return count
+    val list = mutableListOf<Int>()
+    for (i in 1 until k) {
+        while (remainders[i]-- > 0) list.add(i)
+    }
+    println(count)
+    println(list)
+    val n = list.size
+        val dp = Array(n + 1) { IntArray(k) { -1 } }
+    dp[0][0] = 0
+
+    for (i in 0 until n) {
+        val num = list[i]
+        for (r in 0 until k) {
+            if (dp[i][r] == -1) continue
+            val rem = (r + num) % k
+            val newValue = dp[i][r] + if (rem == 0) 1 else 0
+            dp[i + 1][rem] = maxOf(dp[i + 1][rem], newValue)
+        }
+    }
+    println(dp[n].toList())
+    return count + dp[n].max()
 }
 
 fun main() {
     println(
-        maxHappyGroups(4, intArrayOf(1, 3, 2, 5, 2, 2, 1, 6))
+        maxHappyGroups(9, intArrayOf(123,225,325,421,523,698,125,734,332,334,666,234,834,125,225,431,234,562,234))
     )
 }
