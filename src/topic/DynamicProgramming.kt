@@ -188,7 +188,7 @@ fun maxDistance(grid: Array<IntArray>): Int {
 //    return ans
 //}
 
-fun kConcatenationMaxSum(arr: IntArray, k: Int): Int {
+fun kConcatenationMaxSum2(arr: IntArray, k: Int): Int {
     val n = arr.size
     val mod = 1_000_000_007
     if (arr.all { it <= 0 }) return 0
@@ -411,6 +411,45 @@ fun maxProfitAssignment(difficulties: IntArray, profits: IntArray, workers: IntA
         if (best < 0) continue
         last = best
         ans += maxProfits[best]
+    }
+    return ans
+}
+
+fun kConcatenationMaxSum(arr: IntArray, k: Int): Int {
+    val n = arr.size
+    val mod = 1_000_000_007
+    if (arr.all { it <= 0 }) return 0
+    val totalSum = arr.sum().toLong()
+    var maxSum = totalSum * k
+    var subSub = 0L
+    var sum = 0L
+    for (i in 0 until n) {
+        sum = maxOf(sum + arr[i], arr[i].toLong())
+        subSub = maxOf(subSub, sum)
+    }
+
+    maxSum = maxOf(totalSum * (k - 1) + subSub, subSub, maxSum)
+    return (maxSum % mod).toInt()
+}
+
+fun sumDigitDifferences(nums: IntArray): Long {
+    var size = nums[0].toString().length
+    var ans = 0L
+    var counts = IntArray(10)
+    while(size -- > 0) {
+        counts = IntArray(10)
+        for(i in 0 until  nums.size) {
+            val digit = nums[i] % 10
+            nums[i] = nums[i]/10
+            counts[digit]++
+        }
+        val list = counts.filter {it > 0}
+        for(i in 0 until list.size -1) {
+            val a = list[i].toLong()
+            for(j in i + 1 until list.size) {
+                ans += a * list[j].toLong()
+            }
+        }
     }
     return ans
 }
