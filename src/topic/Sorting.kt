@@ -1,6 +1,6 @@
 package topic
 
-import java.util.PriorityQueue
+import java.util.*
 
 fun numSmallerByFrequency(queries: Array<String>, words: Array<String>): IntArray {
     val m = queries.size
@@ -176,4 +176,26 @@ fun sumSubseqWidths(nums: IntArray): Int {
         ans = (ans + totalMax - totalMin + mod) % mod
     }
     return ans.toInt()
+}
+
+fun maxJumps(arr: IntArray, d: Int): Int {
+    val n = arr.size
+    val indices = arr.indices.sortedByDescending { arr[it] }
+    val dp = IntArray(n) { 1 }
+    for (i in indices) {
+        val num = arr[i]
+        val start = (i - d).coerceAtLeast(0)
+        val end = (i + d).coerceAtMost(n - 1)
+        for (j in (i + 1)..end) {
+            if (arr[j] >= num) break
+            dp[j] = maxOf(dp[j], dp[i] + 1)
+        }
+        for (j in (i - 1) downTo start) {
+            if (arr[j] >= num) break
+            dp[j] = maxOf(dp[j], dp[i] + 1)
+        }
+    }
+
+
+    return dp.max()
 }
