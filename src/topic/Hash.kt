@@ -1,8 +1,11 @@
-package remote
+package topic
 
+import remote.UpdateRangeSmallerSegmentTree
 import java.util.*
+import kotlin.collections.iterator
 import kotlin.math.abs
 import kotlin.math.sqrt
+import kotlin.text.iterator
 
 class FreqHash(val base: Long = 131L) {
     private val pow = LongArray(26) { 1L }
@@ -454,7 +457,7 @@ fun longestPalindrome(s: String): String {
     return s.substring(bestL, bestR + 1)
 }
 
-fun maxProduct(s: String): Long {
+fun maxProduct2(s: String): Long {
     val n = s.length
     if (n == 1) return 0L
     val mod1 = 1_000_000_007L
@@ -1477,6 +1480,72 @@ fun closestDivisors(num: Int): IntArray {
     } else {
         intArrayOf(b1, (num + 2) / b1)
     }
+}
+
+fun findReplaceString(s: String, indices: IntArray, sources: Array<String>, targets: Array<String>): String {
+    val n = s.length
+    val mod1 = 1_000_000_007L
+    val mod2 = 1_000_000_009L
+    val base1 = 131L
+    val base2 = 137L
+    val pow1 = LongArray(n+1)
+    val pow2 = LongArray(n+1)
+    pow1[0] = 1L
+    pow2[0] = 1L
+    for(i in 1..n) {
+        pow1[i] = (pow1[i-1] * base1) % mod1
+        pow2[i] = (pow2[i-1] * base2) % mod2
+    }
+
+    val prefix1 = LongArray(n+1)
+    val prefix2 = LongArray(n+1)
+    for(i in 0 until n) {
+        val code = s[i].code
+        prefix1[i+1] = (prefix1[i] * base1 + code) % mod1
+        prefix2[i+1] = (prefix2[i] * base2 + code) % mod2
+    }
+
+    fun getHash(l: Int, r: Int): Pair<Long, Long> {
+        if(l < 0 || r < 0 || l > r) return 0L to 0L
+        val hash1 = (prefix1[r + 1] - (prefix1[l] * pow1[r - l + 1] % mod1) + mod1) % mod1
+        val hash2 = (prefix2[r+1] - (prefix2[l] * pow2[r - l + 1] % mod2) + mod2) % mod2
+        return hash1 to hash2
+    }
+    val builder = StringBuilder()
+    var j = 0
+
+    val triples = (0 until indices.size).map {
+        Triple(indices[it], sources[it], targets[it])
+    }.sortedBy { it.first }
+
+    for(i in 0 until triples.size) {
+        val (index, source, target) = triples[i]
+
+        val length = source.length
+        if(index + length > n)  continue
+
+        val subHash = getHash(index, index + length -1)
+
+        while(j < index) builder.append(s[j++])
+
+        var sourceHash1 = 0L
+        var sourceHash2 = 0L
+        for(c in source) {
+            val code = c.code
+            sourceHash1 = (sourceHash1 * base1 + code) % mod1
+            sourceHash2 = (sourceHash2 * base2 + code) % mod2
+        }
+        val sourceHash = sourceHash1 to sourceHash2
+
+        if(sourceHash != subHash) {
+            continue
+        }
+        builder.append(target)
+        j += length
+    }
+
+    while(j < s.length) builder.append(s[j++])
+    return builder.toString()
 }
 
 fun main() {

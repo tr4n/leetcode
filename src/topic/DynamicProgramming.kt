@@ -350,10 +350,10 @@ fun knightProbability(n: Int, k: Int, row: Int, column: Int): Double {
     val dp = Array(k + 1) { Array(n) { DoubleArray(n) } }
     dp[0][row][column] = 1.0
 
-    for(step in 1..k) {
-        for(r in 0 until n) {
-            for(c in 0 until n) {
-                if(dp[step -1][r][c] == 0.0) continue
+    for (step in 1..k) {
+        for (r in 0 until n) {
+            for (c in 0 until n) {
+                if (dp[step - 1][r][c] == 0.0) continue
                 for (i in 0 until 8) {
                     val x = r + dx[i]
                     val y = c + dy[i]
@@ -365,13 +365,54 @@ fun knightProbability(n: Int, k: Int, row: Int, column: Int): Double {
     }
 
     var total = 0.0
-    for(i in 0 until n) {
-        for(j in 0 until n) {
+    for (i in 0 until n) {
+        for (j in 0 until n) {
             total += dp[k][i][j]
         }
     }
 
     return total
+}
+
+fun maxProfitAssignment(difficulties: IntArray, profits: IntArray, workers: IntArray): Int {
+    workers.sort()
+    val n = difficulties.size
+
+    val pairs = (0 until n).map {
+        difficulties[it] to profits[it]
+    }.sortedWith(compareBy { it.first })
+
+    var maxProfitSofar = Int.MIN_VALUE
+    val maxProfits = IntArray(n)
+
+    for (i in 0 until n) {
+        val profit = pairs[i].second
+        maxProfitSofar = maxOf(maxProfitSofar, profit)
+        maxProfits[i] = maxProfitSofar
+    }
+
+    var ans = 0
+    var last = -1
+    for (worker in workers) {
+        var l = maxOf(last, 0)
+        var r = n - 1
+        var best = last
+
+        while (l <= r) {
+            val mid = (l + r) / 2
+            val diff = pairs[mid].first
+            if (diff <= worker) {
+                l = mid + 1
+                best = mid
+            } else {
+                r = mid - 1
+            }
+        }
+        if (best < 0) continue
+        last = best
+        ans += maxProfits[best]
+    }
+    return ans
 }
 
 fun main() {
