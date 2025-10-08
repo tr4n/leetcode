@@ -1,7 +1,5 @@
 package topic
 
-import kotlin.math.abs
-
 fun maxSumAfterPartitioning(arr: IntArray, k: Int): Int {
     val n = arr.size
     val dp = IntArray(n + 1)
@@ -190,8 +188,194 @@ fun maxDistance(grid: Array<IntArray>): Int {
 //    return ans
 //}
 
+fun kConcatenationMaxSum(arr: IntArray, k: Int): Int {
+    val n = arr.size
+    val mod = 1_000_000_007
+    if (arr.all { it <= 0 }) return 0
+    val totalSum = arr.sum().toLong()
+    var maxSum = 0L
+    var sum = 0L
+    for (num in arr) {
+        sum = maxOf(sum + num, num.toLong())
+        maxSum = maxOf(maxSum, sum)
+    }
+    if (k > 1) {
+        for (num in arr) {
+            sum = maxOf(sum + num, num.toLong())
+            maxSum = maxOf(maxSum, sum)
+        }
+    }
+
+    if (k > 2) {
+        maxSum = maxOf(maxSum, maxSum + (k - 2) * totalSum, totalSum * k)
+    }
+    return (maxSum % mod).toInt()
+}
+
+fun minimumOperations(grid: Array<IntArray>): Int {
+    val m = grid.size
+    val n = grid[0].size
+
+    val columnFrequencies = Array(n) { IntArray(11) }
+    for (col in 0 until n) {
+        for (row in 0 until m) {
+            val num = grid[row][col]
+            columnFrequencies[col][num]++
+        }
+    }
+
+    val colChangeCosts = Array(n) { col ->
+        IntArray(11) { value ->
+            m - columnFrequencies[col][value]
+        }
+    }
+
+    val minOpsDp = Array(n) { IntArray(11) { m * n } }
+
+    for (value in 0..10) {
+        minOpsDp[0][value] = colChangeCosts[0][value]
+    }
+
+    for (col in 1 until n) {
+        for (currentVal in 0..10) {
+            for (prevVal in 0..10) {
+                if (prevVal == currentVal) continue
+                minOpsDp[col][currentVal] = minOf(
+                    minOpsDp[col][currentVal],
+                    minOpsDp[col - 1][prevVal] + colChangeCosts[col][currentVal]
+                )
+            }
+        }
+    }
+
+    return minOpsDp[n - 1].min()
+}
+
+fun numberOfArithmeticSlices(nums: IntArray): Int {
+    val n = nums.size
+    val numbers = mutableListOf<Long>()
+    val numToIndexes = mutableMapOf<Long, MutableList<Int>>()
+
+    for (i in 0 until n) {
+        val num = nums[i].toLong()
+        numbers.add(num)
+        numToIndexes.computeIfAbsent(num) { mutableListOf() }.add(i)
+    }
+
+    val dp = Array(n) { IntArray(n) }
+
+
+    for (i in 2 until n) {
+        for (j in 1 until i) {
+            val numK = 2L * numbers[j] - numbers[i]
+            val indexes = numToIndexes[numK] ?: continue
+            for (k in indexes) {
+                if (k >= j) break
+                dp[i][j] += dp[j][k] + 1
+            }
+        }
+    }
+    var total = 0
+    for (i in 1 until n) {
+        for (j in 0 until i) {
+            total += dp[i][j]
+        }
+    }
+    return total
+}
+
+fun countPalindromes(s: String): Int {
+    val n = s.length
+    val indexes = Array(10) { mutableListOf<Int>() }
+    for (i in s.indices) {
+        val c = s[i]
+        indexes[c - '0'].add(i)
+    }
+
+    var ans = 0L
+    val mod = 1_000_000_007
+
+    val prefix = LongArray(10)
+    val prefixPairs = Array(n + 1) { Array(10) { LongArray(10) } }
+    for (i in 0 until n) {
+        val digit = s[i] - '0'
+
+        for (a in 0 until 10) {
+            for (b in 0 until 10) {
+                prefixPairs[i + 1][a][b] = prefixPairs[i][a][b]
+            }
+        }
+        for (a in 0 until 10) {
+            prefixPairs[i + 1][a][digit] += prefix[a]
+            prefixPairs[i + 1][a][digit] %= mod
+        }
+        prefix[digit]++
+    }
+
+    val suffix = LongArray(10)
+    val suffixPairs = Array(n + 1) { Array(10) { LongArray(10) } }
+    for (i in n - 1 downTo 0) {
+        val digit = s[i] - '0'
+
+        for (a in 0 until 10) {
+            for (b in 0 until 10) {
+                suffixPairs[i][a][b] = suffixPairs[i + 1][a][b]
+            }
+        }
+        for (a in 0 until 10) {
+            suffixPairs[i][digit][a] += suffix[a]
+            suffixPairs[i][digit][a] %= mod
+        }
+        suffix[digit]++
+    }
+
+    for (mid in 2 until n - 2) {
+        val c = s[mid] - '0'
+        for (a in 0 until 10) {
+            for (b in 0 until 10) {
+                val prefixCount = prefixPairs[mid][a][b]
+                val suffixCount = suffixPairs[mid + 1][b][a]
+                val total = (prefixCount * suffixCount) % mod
+                ans = (ans + total) % mod
+            }
+        }
+    }
+
+    return ans.toInt()
+}
+
+fun knightProbability(n: Int, k: Int, row: Int, column: Int): Double {
+    val dx = intArrayOf(2, 2, -2, -2, 1, 1, -1, -1)
+    val dy = intArrayOf(1, -1, 1, -1, 2, -2, 2, -2)
+    val dp = Array(k + 1) { Array(n) { DoubleArray(n) } }
+    dp[0][row][column] = 1.0
+
+    for(step in 1..k) {
+        for(r in 0 until n) {
+            for(c in 0 until n) {
+                if(dp[step -1][r][c] == 0.0) continue
+                for (i in 0 until 8) {
+                    val x = r + dx[i]
+                    val y = c + dy[i]
+                    if (x !in 0 until n || y !in 0 until n) continue
+                    dp[step][x][y] += dp[step - 1][r][c] / 8.0
+                }
+            }
+        }
+    }
+
+    var total = 0.0
+    for(i in 0 until n) {
+        for(j in 0 until n) {
+            total += dp[k][i][j]
+        }
+    }
+
+    return total
+}
+
 fun main() {
     println(
-        numRollsToTarget(30, 30, 500)
+        knightProbability(3, 2, 0, 0)
     )
 }

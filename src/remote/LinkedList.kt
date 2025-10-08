@@ -223,6 +223,42 @@ fun addTwoNumbers(l1: ListNode?, l2: ListNode?): ListNode? {
     return root.next
 }
 
+fun doubleIt(head: ListNode?): ListNode? {
+    var first: ListNode? = null
+    var second: ListNode? = null
+    var a = head
+    while (a != null) {
+        val node = ListNode(a.`val`)
+        node.next = first
+        first = node
+        a = a.next
+    }
+
+    var b = head
+    while (b != null) {
+        val node = ListNode(b.`val`)
+        node.next = second
+        second = node
+        b = b.next
+    }
+
+    var result: ListNode? = null
+    var carry = 0
+
+    while (first != null || second != null || carry > 0) {
+        val x = first?.`val` ?: 0
+        val y = second?.`val` ?: 0
+        val value = x + y + carry
+        carry = value / 10
+        val node = ListNode(value % 10)
+        node.next = result
+        first = first?.next
+        second = second?.next
+        result = node
+    }
+    return result
+}
+
 fun main() {
     println(
         createSortedArray(intArrayOf(1, 5, 6, 2))

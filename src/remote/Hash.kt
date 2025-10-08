@@ -1,6 +1,8 @@
 package remote
 
 import java.util.*
+import kotlin.math.abs
+import kotlin.math.sqrt
 
 class FreqHash(val base: Long = 131L) {
     private val pow = LongArray(26) { 1L }
@@ -1317,8 +1319,168 @@ fun countCells(grid: Array<CharArray>, pattern: String): Int {
     return result
 }
 
+fun countSubstrings(s: String): Int {
+    class CharDoubleHasher(
+        s: String,
+        private var pow1: LongArray = LongArray(0),
+        private var pow2: LongArray = LongArray(0)
+    ) {
+        private val n = s.length
+        private val base1 = 131L
+        private val mod1 = 1_000_000_007L
+        private val base2 = 137L
+        private val mod2 = 1_000_000_009L
+
+        private val prefix1 = LongArray(n + 1)
+        private val prefix2 = LongArray(n + 1)
+        private val prefixRev1 = LongArray(n + 1)
+        private val prefixRev2 = LongArray(n + 1)
+
+        init {
+            if (pow1.size < n) pow1 = initPow(n, base1, mod1)
+            if (pow2.size < n) pow2 = initPow(n, base2, mod2)
+
+            for (i in 0 until n) {
+                prefix1[i + 1] = (prefix1[i] * base1 + s[i].code) % mod1
+                prefix2[i + 1] = (prefix2[i] * base2 + s[i].code) % mod2
+            }
+
+            for (i in n - 1 downTo 0) {
+                prefixRev1[n - i] = (prefixRev1[n - i - 1] * base1 + s[i].code) % mod1
+                prefixRev2[n - i] = (prefixRev2[n - i - 1] * base2 + s[i].code) % mod2
+            }
+        }
+
+        private fun initPow(maxLen: Int, base: Long, mod: Long): LongArray {
+            val pow = LongArray(maxLen + 1)
+            pow[0] = 1L
+            for (i in 0 until maxLen) {
+                pow[i + 1] = (pow[i] * base) % mod
+            }
+            return pow
+        }
+
+        // hash s[l..r]
+        fun getHash(l: Int, r: Int): Pair<Long, Long> {
+            val h1 = (prefix1[r + 1] - (prefix1[l] * pow1[r - l + 1]) % mod1 + mod1) % mod1
+            val h2 = (prefix2[r + 1] - (prefix2[l] * pow2[r - l + 1]) % mod2 + mod2) % mod2
+            return Pair(h1, h2)
+        }
+
+        // hash reverse s[l..r]
+        fun getHashRev(l: Int, r: Int): Pair<Long, Long> {
+            val rl = n - 1 - r
+            val rr = n - 1 - l
+            val h1 = (prefixRev1[rr + 1] - (prefixRev1[rl] * pow1[rr - rl + 1]) % mod1 + mod1) % mod1
+            val h2 = (prefixRev2[rr + 1] - (prefixRev2[rl] * pow2[rr - rl + 1]) % mod2 + mod2) % mod2
+            return Pair(h1, h2)
+        }
+    }
+
+    val hasher = CharDoubleHasher(s)
+    val n = s.length
+    var cnt = n
+    for (i in 0 until n) {
+        for (j in i + 1 until n) {
+            val h1 = hasher.getHash(i, j)
+            val h2 = hasher.getHashRev(i, j)
+            if (h1 == h2) cnt++
+        }
+    }
+    return cnt
+}
+
+fun minSteps(n: Int): Int {
+//    val dp = Array(n + 1) { IntArray(n + 1) { n + 3 } }
+//    if (n == 1) return 0
+//    dp[1][1] = 1
+//    for (i in 2..n) {
+//        if (i % 2 == 0) {
+//            dp[i][i / 2] = minOf(dp[i][i / 2], dp[i / 2].min() + 2)
+//        }
+//        for (j in 1 until i) {
+//            dp[i][j] = minOf(dp[i][j], dp[i - j][j] + 1)
+//
+//        }
+//    }
+//    return dp[n].min()
+    var num = n
+    var ans = 0
+    var d = 2
+    while (d * d <= num) {
+        while (num % d == 0) {
+            ans += d
+            num /= d
+        }
+        d++
+    }
+    if (num > 1) ans += num
+    return ans
+}
+
+fun smallestValue(n: Int): Int {
+    var divisorSum = 0
+    var number = n
+    while (true) {
+        var num = number
+        divisorSum = 0
+        var d = 2
+        while (d * d <= num) {
+            while (num % d == 0) {
+                divisorSum += d
+                num /= d
+            }
+            d++
+        }
+        if (num > 1) divisorSum += num
+        if (divisorSum == number) return number
+        number = divisorSum
+    }
+    return n
+}
+
+fun distinctPrimeFactors(nums: IntArray): Int {
+    val primes = mutableSetOf<Int>()
+
+    for (num in nums) {
+        if (num <= 3) {
+            primes.add(num)
+            continue
+        }
+        var number = num
+        while (number % 2 == 0) {
+            primes.add(2)
+            number /= 2
+        }
+        val sqrtNum = sqrt(number.toDouble()).toInt()
+        for (d in 3..sqrtNum step 2) {
+            while (number % d == 0) {
+                primes.add(d)
+                number /= d
+            }
+        }
+        if (number > 1) primes.add(number)
+    }
+    return primes.size
+}
+
+fun closestDivisors(num: Int): IntArray {
+    var a1 = sqrt((num + 1).toDouble()).toInt()
+    while (a1 > 0 && (num + 1) % a1 != 0) a1--
+    val delta1 = if (a1 > 0) abs(a1 - (num + 1) / a1) else Int.MAX_VALUE
+
+    var b1 = sqrt((num + 2).toDouble()).toInt()
+    while (b1 > 0 && (num + 2) % b1 != 0) b1--
+    val delta2 = if (b1 > 0) abs(b1 - (num + 2) / b1) else Int.MAX_VALUE
+    return if (delta1 < delta2) {
+        intArrayOf(a1, (num + 1) / a1)
+    } else {
+        intArrayOf(b1, (num + 2) / b1)
+    }
+}
+
 fun main() {
     println(
-        minimumTimeToInitialState("abacaba", 3)
+        minSteps(3)
     )
 }

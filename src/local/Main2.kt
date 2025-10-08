@@ -123,7 +123,7 @@ fun longestContinuousSubstring(s: String): Int {
     return dp.max()
 }
 
-fun numberOfArithmeticSlices(nums: IntArray): Int {
+fun numberOfArithmeticSlices1(nums: IntArray): Int {
     val n = nums.size
     if (n < 3) return 0
     val dp = IntArray(n)
