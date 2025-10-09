@@ -199,3 +199,75 @@ fun maxJumps(arr: IntArray, d: Int): Int {
 
     return dp.max()
 }
+
+fun rankTeams(votes: Array<String>): String {
+    val n = votes[0].length
+    val teams = MutableList(26) { IntArray(n) }
+    for (vote in votes) {
+        for (i in 0 until n) {
+            val id = vote[i] - 'A'
+            teams[id][i]++
+        }
+    }
+
+    return votes[0].toList().sortedWith { charA, charB ->
+        val teamA = teams[charA - 'A']
+        val teamB = teams[charB - 'A']
+        for (i in 0 until n) {
+            if (teamA[i] != teamB[i]) {
+                return@sortedWith teamB[i].compareTo(teamA[i])
+            }
+        }
+        charB.compareTo(charA)
+    }.joinToString("")
+}
+
+fun getKth(lo: Int, hi: Int, k: Int): Int {
+    if (hi <= lo) return lo
+    val memo = mutableMapOf<Int, Int>()
+
+    fun f(num: Int): Int {
+        if (num == 1) return 0
+        val value = memo[num]
+        if (value != null) return value
+        val ans = 1 + if (num % 2 == 0) f(num / 2) else f(3 * num + 1)
+        memo[num] = ans
+        return ans
+    }
+
+    val heap =
+        PriorityQueue<Pair<Int, Int>>(compareByDescending<Pair<Int, Int>> { it.second }.thenByDescending { it.first })
+
+    for (num in lo..hi) {
+        val value = f(num)
+        heap.add(num to value)
+        if (heap.size > k) heap.poll()
+    }
+    println(heap)
+    // var ans = lo
+    // for(i in 0 until k) ans = heap.poll().first
+    return heap.poll().first
+}
+
+fun checkIfCanBreak(s1: String, s2: String): Boolean {
+    val x = s1.toCharArray()
+    val y = s2.toCharArray()
+    x.sort()
+    y.sort()
+    //   println(x.toList())
+    //  println(y.toList())
+    val n = x.size
+    return (0 until n).all { x[it] <= y[it] }
+            || (0 until n).all { x[it] >= y[it] }
+
+}
+
+fun arrangeWords(text: String): String {
+    return text.split(" ").withIndex()
+        .sortedWith(compareBy<IndexedValue<String>> { it.value.length }.thenBy { it.index })
+        .joinToString(" ") { entry ->
+            entry.value.replaceFirstChar { it.lowercase() }
+        }
+        .replaceFirstChar { it.uppercase() }
+}
+

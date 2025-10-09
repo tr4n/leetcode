@@ -1,5 +1,7 @@
 package topic
 
+import kotlin.math.abs
+
 fun maxSumAfterPartitioning(arr: IntArray, k: Int): Int {
     val n = arr.size
     val dp = IntArray(n + 1)
@@ -453,6 +455,112 @@ fun sumDigitDifferences(nums: IntArray): Long {
     }
     return ans
 }
+
+fun sumOfPowers(nums: IntArray, k: Int): Int {
+    val edges = mutableListOf<Int>()
+    val n = nums.size
+    for (i in 0 until n) {
+        for (j in i + 1 until n) {
+            edges.add(abs(nums[i] - nums[j]))
+        }
+    }
+
+    val list = edges.distinct()
+    val mod = 1_000_000_007L
+    val pow = LongArray(n + 1)
+    pow[0] = 1L
+    for (i in 1..n) pow[i] = (pow[i - 1] * 2) % mod
+
+    var ans = 0L
+    nums.sort()
+
+    fun countSubsequences(d: Int): Long {
+        val dp = LongArray(n)
+        var prefixSum = 0L
+        var left = 0
+
+        for (i in 0 until n) {
+            while (left < i && nums[i] - nums[left] >= d) {
+                prefixSum = (prefixSum + dp[left]) % mod
+                left++
+            }
+            dp[i] = (1L + prefixSum) % mod
+        }
+
+        val total = dp.fold(0L) { sum, x -> (sum + x) % mod }
+        return (total - n + mod) % mod
+    }
+
+    fun countSubsequencesOfLengthK(d: Int, k: Int): Long {
+        if (k <= 1) return 0L
+
+        val dp = Array(n) { LongArray(k + 1) }
+
+        for (i in 0 until n) {
+            dp[i][1] = 1L
+        }
+
+        for (j in 2..k) {
+            var prefixSum = 0L
+            var left = 0
+            for (i in 0 until n) {
+                while (left < i && nums[i] - nums[left] >= d) {
+                    prefixSum = (prefixSum + dp[left][j - 1]) % mod
+                    left++
+                }
+                dp[i][j] = prefixSum
+            }
+        }
+
+        var totalCount = 0L
+        for (i in 0 until n) {
+            totalCount = (totalCount + dp[i][k]) % mod
+        }
+
+        return totalCount
+    }
+
+    for (d in list) {
+        val ge = countSubsequencesOfLengthK(d, k)
+        val g = countSubsequencesOfLengthK(d + 1, k)
+        val totalSum = ge - g
+
+        ans = (ans + totalSum * d.toLong()) % mod
+    }
+
+    return ans.toInt()
+}
+
+fun sumOfPower(nums: IntArray, k: Int): Int {
+    val n = nums.size
+    val mod = 1_000_000_007L
+    val pow = LongArray(n + 1)
+    pow[0] = 1L
+    for (i in 1..n) pow[i] = (pow[i - 1] * 2) % mod
+    nums.sort()
+
+    val dp = Array(k + 1) { LongArray(n + 1) }
+    dp[0][0] = 1L
+
+    for (num in nums) {
+        for (i in k downTo num) {
+            for (len in n downTo 1) {
+                if (dp[i - num][len - 1] > 0) {
+                    dp[i][len] = (dp[i][len] + dp[i - num][len - 1]) % mod
+                }
+            }
+        }
+    }
+
+    var ans = 0L
+    for (len in 1..n) {
+        val sum = (dp[k][len] * pow[n - len]) % mod
+        ans = (ans + sum) % mod
+    }
+    return ans.toInt()
+}
+
+
 
 fun main() {
     println(
