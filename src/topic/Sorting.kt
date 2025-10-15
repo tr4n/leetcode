@@ -678,6 +678,156 @@ fun minZeroArray(nums: IntArray, queries: Array<IntArray>): Int {
     return -1
 }
 
+class MST(private val data: IntArray) {
+    private val n = data.size
+    private val tree = Array(4 * n) { mutableListOf<Int>() }
+
+    init {
+        build(1, 0, n - 1)
+    }
+
+    private fun build(node: Int, l: Int, r: Int) {
+        if (l == r) {
+            tree[node] = mutableListOf(data[l])
+            return
+        }
+        val mid = (l + r) / 2
+        build(2 * node, l, mid)
+        build(2 * node + 1, mid + 1, r)
+        tree[node] = merge(tree[2 * node], tree[2 * node + 1])
+    }
+
+    private fun merge(left: List<Int>, right: List<Int>): MutableList<Int> {
+        val result = mutableListOf<Int>()
+        var l = 0
+        var r = 0
+
+        while (l < left.size && r < right.size) {
+            if (left[l] < right[r]) result.add(left[l++]) else result.add(right[r++])
+        }
+        while (l < left.size) result.add(left[l++])
+        while (r < right.size) result.add(right[r++])
+        return result
+    }
+
+    private fun query(node: Int, l: Int, r: Int, ql: Int, qr: Int, target: Int, findGreater: Boolean): Long {
+        if (l > qr || r < ql) return 0L
+        if (ql <= l && r <= qr) {
+            val list = tree[node]
+            return if (findGreater) countGreater(list, target) else countSmaller(list, target)
+        }
+        val mid = (l + r) / 2
+        val left = query(2 * node, l, mid, ql, qr, target, findGreater)
+        val right = query(2 * node + 1, mid + 1, r, ql, qr, target, findGreater)
+        return left + right
+    }
+
+    private fun countSmaller(list: List<Int>, target: Int): Long {
+        if (list.isEmpty()) return 0L
+        if (target <= list.first()) return 0L
+        var lo = 0
+        var hi = list.size - 1
+        var last = -1
+
+        while (lo <= hi) {
+            val mid = (lo + hi) / 2
+            val value = list[mid]
+            if (value < target) {
+                last = mid
+                lo = mid + 1
+            } else hi = mid - 1
+        }
+        if (last < 0) return 0L
+        return last.toLong() + 1L
+    }
+
+    private fun countGreater(list: List<Int>, target: Int): Long {
+        if (list.isEmpty()) return 0L
+        if (target >= list.last()) return 0L
+        var lo = 0
+        var hi = list.size - 1
+        var first = -1
+
+        while (lo <= hi) {
+            val mid = (lo + hi) / 2
+            val value = list[mid]
+            if (value > target) {
+                first = mid
+                hi = mid - 1
+            } else lo = mid + 1
+        }
+        if (first < 0) return 0L
+        return list.size.toLong() - first.toLong()
+    }
+
+    fun queryGreater(start: Int, end: Int, target: Int): Long {
+        return query(1, 0, n - 1, start, end, target, true)
+    }
+
+    fun querySmaller(start: Int, end: Int, target: Int): Long {
+        return query(1, 0, n - 1, start, end, target, false)
+    }
+}
+
+fun countQuadruplets(nums: IntArray): Long {
+    val n = nums.size
+    var ans = 0L
+
+    fun countSmaller(list: List<Int>, target: Int): Long {
+        if (list.isEmpty()) return 0L
+        if (target <= list.first()) return 0L
+        var lo = 0
+        var hi = list.size - 1
+        var last = -1
+
+        while (lo <= hi) {
+            val mid = (lo + hi) / 2
+            val value = list[mid]
+            if (value < target) {
+                last = mid
+                lo = mid + 1
+            } else hi = mid - 1
+        }
+        if (last < 0) return 0L
+        return 1L + last
+    }
+
+    val list = mutableListOf(nums[0])
+    for (j in 1 until n - 2) {
+        var rightCount = if (nums.last() > nums[j]) 1 else 0
+        for (k in (n - 2) downTo j + 1) {
+            if (nums[j] == nums[k]) continue
+            if (nums[j] < nums[k]) {
+                rightCount++
+                continue
+            }
+            val left = countSmaller(list, nums[k])
+            ans += left * rightCount
+
+        }
+        list.add(nums[j])
+    }
+    return ans
+}
+
+fun increasingTriplet(nums: IntArray): Boolean {
+    val n = nums.size
+    val max = IntArray(n)
+    max[n-1] = nums[n-1]
+    for(i in (n -2) downTo 0) {
+        max[i] = maxOf(nums[i], max[i + 1])
+    }
+
+    var minSoFar = nums[0]
+
+    for(i in 1 until n - 1) {
+        val num = nums[i]
+        if(num > minSoFar && num < max[i+1]) return true
+        minSoFar = minOf(minSoFar, num)
+    }
+    return false
+}
+
 fun main() {
     println(
         sumOfGoodSubsequences(intArrayOf(10, 10, 1, 9))
