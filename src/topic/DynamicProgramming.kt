@@ -438,17 +438,17 @@ fun sumDigitDifferences(nums: IntArray): Long {
     var size = nums[0].toString().length
     var ans = 0L
     var counts = IntArray(10)
-    while(size -- > 0) {
+    while (size-- > 0) {
         counts = IntArray(10)
-        for(i in 0 until  nums.size) {
+        for (i in 0 until nums.size) {
             val digit = nums[i] % 10
-            nums[i] = nums[i]/10
+            nums[i] = nums[i] / 10
             counts[digit]++
         }
-        val list = counts.filter {it > 0}
-        for(i in 0 until list.size -1) {
+        val list = counts.filter { it > 0 }
+        for (i in 0 until list.size - 1) {
             val a = list[i].toLong()
-            for(j in i + 1 until list.size) {
+            for (j in i + 1 until list.size) {
                 ans += a * list[j].toLong()
             }
         }
@@ -561,6 +561,52 @@ fun sumOfPower(nums: IntArray, k: Int): Int {
 }
 
 
+
+fun numDupDigitsAtMostN(n: Int): Int {
+    val s = n.toString()
+    val m = s.length
+
+    val totalNumbers = n + 1
+    val countByLen = intArrayOf(
+        0,
+        9,
+        9 * 9,
+        9 * 9 * 8,
+        9 * 9 * 8 * 7,
+        9 * 9 * 8 * 7 * 6,
+        9 * 9 * 8 * 7 * 6 * 5,
+        9 * 9 * 8 * 7 * 6 * 5 * 4,
+        9 * 9 * 8 * 7 * 6 * 5 * 4 * 3,
+        9 * 9 * 8 * 7 * 6 * 5 * 4 * 3 * 2
+    )
+    var nonDuplicates = 0
+    for (len in 1 until m) nonDuplicates += countByLen[len]
+
+    fun perm(m: Int, r: Int): Int {
+        if (r > m) return 0
+        var res = 1
+        for (i in 0 until r) res *= (m - i)
+        return res
+    }
+
+    val used = BooleanArray(10)
+
+    for (i in 0 until m) {
+        val digit = s[i] - '0'
+
+        for (d in 0 until digit) {
+            if (d == 0 && i == 0) continue
+            if (used[d]) continue
+            val remaining = m - i - 1
+            val pool = 10 - i - 1
+            nonDuplicates += perm(pool, remaining)
+        }
+        if (used[digit]) break
+        used[digit] = true
+    }
+    if (s.toSet().size == m) nonDuplicates++
+    return totalNumbers - nonDuplicates
+}
 
 fun main() {
     println(

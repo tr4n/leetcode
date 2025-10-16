@@ -1548,6 +1548,40 @@ fun findReplaceString(s: String, indices: IntArray, sources: Array<String>, targ
     return builder.toString()
 }
 
+fun longestValidSubstring(word: String, forbidden: List<String>): Int {
+    val blocks = mutableSetOf<String>()
+    val lens = mutableSetOf<Int>()
+
+    for(str in forbidden) {
+        blocks.add(str)
+        lens.add(str.length)
+    }
+    val suffixLens = lens.sorted()
+    //  println(suffixLens)
+    val n = word.length
+    var l = 0
+    var r = 0
+    var maxLen = 0
+    while(r < n) {
+        val length = r - l + 1
+        for(len in suffixLens) {
+            if(len > length) break
+            val suffix = word.substring(r - len + 1, r + 1)
+
+            if(suffix !in blocks) continue
+
+            maxLen = maxOf(maxLen, r- l)
+            l = r - len + 2
+            //  println("$suffix $l $r")
+            break
+        }
+        maxLen = maxOf(maxLen, r- l + 1)
+        r++
+
+    }
+    return maxLen
+}
+
 fun main() {
     println(
         minSteps(3)
