@@ -205,3 +205,123 @@ fun countSubgraphsForEachDiameter(n: Int, edges: Array<IntArray>): IntArray {
     }
     return result
 }
+
+fun queensAttacktheKing(queens: Array<IntArray>, king: IntArray): List<List<Int>> {
+    val grid = Array(8) { BooleanArray(8) }
+    for (queen in queens) {
+        grid[queen[0]][queen[1]] = true
+    }
+
+    val dirX = intArrayOf(-1, -1, -1, 0, 0, 1, 1, 1)
+    val dirY = intArrayOf(-1, 0, 1, -1, 1, -1, 0, 1)
+
+    val r = king[0]
+    val c = king[1]
+    val result = mutableListOf<List<Int>>()
+    for (i in 0 until 8) {
+        var x = r
+        var y = c
+        while (x in 0 until 8 && y in 0 until 8) {
+            x += dirX[i]
+            y += dirY[i]
+            if (grid[x][y]) {
+                result.add(listOf(x, y))
+                break
+            }
+        }
+    }
+    return result
+}
+
+fun minMovesToCaptureTheQueen(
+    rookX: Int, rookY: Int,
+    bishopX: Int, bishopY: Int,
+    queenX: Int, queenY: Int
+): Int {
+    val sameColumn = (rookX == queenX)
+    val sameRow = (rookY == queenY)
+
+    val bishopBlocksColumn = (bishopX == rookX &&
+            bishopY in minOf(rookY, queenY)..maxOf(rookY, queenY))
+    val bishopBlocksRow = (bishopY == rookY &&
+            bishopX in minOf(rookX, queenX)..maxOf(rookX, queenX))
+
+    val rookCanCapture = (sameColumn && !bishopBlocksColumn) ||
+            (sameRow && !bishopBlocksRow)
+    if (rookCanCapture) return 1
+
+    val sameDiagonal1 = (bishopX - bishopY == queenX - queenY)
+    val sameDiagonal2 = (bishopX + bishopY == queenX + queenY)
+
+    val rookBlocksDiagonal1 = (rookX - rookY == bishopX - bishopY &&
+            rookX - rookY == queenX - queenY &&
+            rookX in minOf(bishopX, queenX)..maxOf(bishopX, queenX) &&
+            rookY in minOf(bishopY, queenY)..maxOf(bishopY, queenY))
+
+    val rookBlocksDiagonal2 = (rookX + rookY == bishopX + bishopY &&
+            rookX + rookY == queenX + queenY &&
+            rookX in minOf(bishopX, queenX)..maxOf(bishopX, queenX) &&
+            rookY in minOf(bishopY, queenY)..maxOf(bishopY, queenY))
+
+    val bishopCanCapture = (sameDiagonal1 || sameDiagonal2) &&
+            !(rookBlocksDiagonal1 || rookBlocksDiagonal2)
+    if (bishopCanCapture) return 1
+
+    return 2
+}
+
+fun buildTreeWithInorder(preorder: IntArray, inorder: IntArray): TreeNode? {
+    val n = preorder.size
+    val inorderMap = inorder.withIndex().associate { it.value to it.index }
+    var index = 0
+
+    fun build(start: Int, end: Int): TreeNode? {
+        if (index >= n) return null
+        val value = preorder[index++]
+        val root = TreeNode(value)
+
+        val mid = inorderMap[value] ?: 0
+        if (mid > start) root.left = build(start, mid - 1)
+        if (mid < end) root.right = build(mid + 1, end)
+        return root
+    }
+
+    return build(0, n - 1)
+}
+
+fun buildTree(inorder: IntArray, postorder: IntArray): TreeNode? {
+    val n = postorder.size
+    val inorderMap = inorder.withIndex().associate { it.value to it.index }
+    var index = n - 1
+
+    fun build(start: Int, end: Int): TreeNode? {
+        if (index < 0) return null
+        val value = postorder[index--]
+        val root = TreeNode(value)
+
+        val mid = inorderMap[value] ?: return null
+        if (mid < end) root.right = build(mid + 1, end)
+        if (mid > start) root.left = build(start, mid - 1)
+        return root
+    }
+
+    return build(0, n - 1)
+}
+
+fun reachingPoints(sx: Int, sy: Int, tx: Int, ty: Int): Boolean {
+
+    fun dfs(x: Int, y: Int): Boolean {
+        if (x == sx && y == sy) return true
+        if (x < sx || y < sy) return false
+
+        return if (x > y) {
+            if (y == sy) (x - sx) % y == 0
+            else dfs(x % y, y)
+        } else {
+            if (x == sx) (y - sy) % x == 0
+            else dfs(x, y % x)
+        }
+    }
+
+    return dfs(tx, ty)
+}

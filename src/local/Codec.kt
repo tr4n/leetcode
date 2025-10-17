@@ -1,6 +1,6 @@
 package local
 
-import remote.TreeNode
+import topic.TreeNode
 import java.util.*
 
 class Codec() {

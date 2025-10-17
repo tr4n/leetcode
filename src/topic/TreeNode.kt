@@ -1,4 +1,4 @@
-package remote
+package topic
 
 class TreeNode(var `val`: Int) {
     var left: TreeNode? = null
@@ -27,7 +27,7 @@ fun buildGraphIterative(root: TreeNode?): Pair<List<Int>, List<MutableList<Int>>
 
         val childNodes = listOfNotNull(node.right, node.left)
 
-        for(childNode in childNodes) {
+        for (childNode in childNodes) {
             val nodeIndex = nodeToIndex.getOrPut(childNode) {
                 val newIndex = nodes.size
                 nodes.add(childNode.`val`)

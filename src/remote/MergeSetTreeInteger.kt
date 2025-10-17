@@ -81,39 +81,55 @@ class DiffCountSegmentTree(private val arr: IntArray) {
 
 fun subarraysWithKDistinct(nums: IntArray, k: Int): Int {
     val n = nums.size
-    val set = mutableSetOf<Int>()
-    var left = 0
-    var cnt = 0
-    val max = nums.max()
-    val freq = IntArray(max + 1)
 
-    for (right in 0 until n) {
+    fun countDistinct(limit: Int): Int {
+        val freq = IntArray(n + 1)
+        var l = 0
+        var distinctCount = 0
+        var cnt = 0
+        for(r in 0 until n) {
+            val num = nums[r]
+            if (freq[num] == 0) distinctCount++
+            freq[num]++
 
-        val num = nums[right]
-        if (set.size == k && num !in set) {
-            while (set.size == k) {
-                println(nums.toList().subList(left, right))
-                cnt += (right - left - k + 1)
-                val leftMost = nums[left]
+            while (distinctCount > limit) {
+                val leftMost = nums[l]
+                if (freq[leftMost] == 1) distinctCount--
                 freq[leftMost]--
-                if (freq[leftMost] <= 0) set.remove(nums[left])
-                left++
+                l++
             }
+            cnt += (r - l + 1)
         }
-
-        set.add(num)
-        freq[num]++
+        return cnt
     }
-    while (set.size == k) {
-        println(nums.toList().subList(left, n))
-        cnt += (n - left - k + 1)
-        val leftMost = nums[left]
-        freq[leftMost]--
-        if (freq[leftMost] <= 0) set.remove(nums[left])
-        left++
-    }
+    return countDistinct(k) - countDistinct(k - 1)
+}
 
-    return cnt
+fun countCompleteSubarrays(nums: IntArray): Int {
+    val n = nums.max()
+    val k = nums.toSet().size
+
+    fun countDistinct(limit: Int): Int {
+        val freq = IntArray(n + 1)
+        var l = 0
+        var distinctCount = 0
+        var cnt = 0
+        for(r in 0 until nums.size) {
+            val num = nums[r]
+            if (freq[num] == 0) distinctCount++
+            freq[num]++
+
+            while (distinctCount > limit) {
+                val leftMost = nums[l]
+                if (freq[leftMost] == 1) distinctCount--
+                freq[leftMost]--
+                l++
+            }
+            cnt += (r - l + 1)
+        }
+        return cnt
+    }
+    return countDistinct(k) - countDistinct(k-1)
 }
 
 fun main() {
