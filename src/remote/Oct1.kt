@@ -187,3 +187,70 @@ fun smallestDivisor(nums: IntArray, threshold: Int): Int {
     }
     return ans
 }
+
+class DistinctST(private val data: IntArray) {
+    private val n = data.size
+    private val tree = Array(4 * n) {
+        Array(2) { mutableMapOf<Int, Int>() }
+    }
+
+    init {
+        build(1, 0, n - 1)
+    }
+
+    private fun build(node: Int, l: Int, r: Int) {
+        if (l == r) {
+            val num = data[l]
+            tree[node][num % 2][num] = 1
+            return
+        }
+        val mid = (l + r) / 2
+        build(2 * node, l, mid)
+        build(2 * node + 1, mid + 1, r)
+        tree[node][0] = merge(tree[2 * node][0], tree[2 * node + 1][0])
+        tree[node][1] = merge(tree[2 * node][1], tree[2 * node + 1][1])
+    }
+
+    private fun merge(map1: MutableMap<Int, Int>, map2: MutableMap<Int, Int>): MutableMap<Int, Int> {
+        val map = mutableMapOf<Int, Int>()
+        for ((key, value) in map2) {
+            map[key] = (map[key] ?: 0) + value
+        }
+        for ((key, value) in map1) {
+            map[key] = (map[key] ?: 0) + value
+        }
+        return map
+    }
+
+    private fun query(node: Int, l: Int, r: Int, ql: Int, qr: Int): Int {
+        if (l > qr || r < ql) return 0
+        if (l >= ql && r <= qr) return tree[node].size
+        val mid = (l + r) / 2
+        return query(2 * node, l, mid, ql, qr) + query(2 * node + 1, mid + 1, r, ql, qr)
+    }
+}
+
+fun longestBalanced(nums: IntArray): Int {
+    val n = nums.size
+
+    var ans = 0
+    for (i in 0 until n) {
+        if (n - i <= ans) break
+        val map = mutableMapOf<Int, Int>()
+        val count = IntArray(2)
+
+        for (j in i until n) {
+            val num = nums[j]
+            val cnt = (map[num] ?: 0) + 1
+            map[num] = cnt
+            if (cnt == 1) {
+                count[num % 2]++
+            }
+            if (count[0] == count[1]) {
+                ans = maxOf(ans, j - i + 1)
+            }
+        }
+    }
+
+    return ans
+}

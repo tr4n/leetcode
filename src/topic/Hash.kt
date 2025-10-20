@@ -2,10 +2,8 @@ package topic
 
 import remote.UpdateRangeSmallerSegmentTree
 import java.util.*
-import kotlin.collections.iterator
 import kotlin.math.abs
 import kotlin.math.sqrt
-import kotlin.text.iterator
 
 class FreqHash(val base: Long = 131L) {
     private val pow = LongArray(26) { 1L }
@@ -26,6 +24,43 @@ class FreqHash(val base: Long = 131L) {
         hash -= pow[c - 'a']
     }
 }
+
+class FreqPrefixHash(val s: String) {
+    private val n = s.length
+    private val base1 = 131L
+    private val base2 = 137L
+    private val mod1 = 1_000_000_007L
+    private val mod2 = 1_000_000_009L
+
+    private val H1 = LongArray(n + 1)
+    private val H2 = LongArray(n + 1)
+
+    init {
+        val freq = IntArray(26)
+        for (i in 0 until n) {
+            freq[s[i] - 'a']++
+            var h1 = 0L
+            var h2 = 0L
+            var pow1 = 1L
+            var pow2 = 1L
+            for (c in 0 until 26) {
+                h1 = (h1 + freq[c] * pow1) % mod1
+                h2 = (h2 + freq[c] * pow2) % mod2
+                pow1 = (pow1 * base1) % mod1
+                pow2 = (pow2 * base2) % mod2
+            }
+            H1[i + 1] = h1
+            H2[i + 1] = h2
+        }
+    }
+
+    fun hash(l: Int, r: Int): Pair<Long, Long> {
+        val h1 = (H1[r + 1] - H1[l] + mod1) % mod1
+        val h2 = (H2[r + 1] - H2[l] + mod2) % mod2
+        return h1 to h2
+    }
+}
+
 
 class PalindromeHasher(
     s: String,
@@ -1488,29 +1523,30 @@ fun findReplaceString(s: String, indices: IntArray, sources: Array<String>, targ
     val mod2 = 1_000_000_009L
     val base1 = 131L
     val base2 = 137L
-    val pow1 = LongArray(n+1)
-    val pow2 = LongArray(n+1)
+    val pow1 = LongArray(n + 1)
+    val pow2 = LongArray(n + 1)
     pow1[0] = 1L
     pow2[0] = 1L
-    for(i in 1..n) {
-        pow1[i] = (pow1[i-1] * base1) % mod1
-        pow2[i] = (pow2[i-1] * base2) % mod2
+    for (i in 1..n) {
+        pow1[i] = (pow1[i - 1] * base1) % mod1
+        pow2[i] = (pow2[i - 1] * base2) % mod2
     }
 
-    val prefix1 = LongArray(n+1)
-    val prefix2 = LongArray(n+1)
-    for(i in 0 until n) {
+    val prefix1 = LongArray(n + 1)
+    val prefix2 = LongArray(n + 1)
+    for (i in 0 until n) {
         val code = s[i].code
-        prefix1[i+1] = (prefix1[i] * base1 + code) % mod1
-        prefix2[i+1] = (prefix2[i] * base2 + code) % mod2
+        prefix1[i + 1] = (prefix1[i] * base1 + code) % mod1
+        prefix2[i + 1] = (prefix2[i] * base2 + code) % mod2
     }
 
     fun getHash(l: Int, r: Int): Pair<Long, Long> {
-        if(l < 0 || r < 0 || l > r) return 0L to 0L
+        if (l < 0 || r < 0 || l > r) return 0L to 0L
         val hash1 = (prefix1[r + 1] - (prefix1[l] * pow1[r - l + 1] % mod1) + mod1) % mod1
-        val hash2 = (prefix2[r+1] - (prefix2[l] * pow2[r - l + 1] % mod2) + mod2) % mod2
+        val hash2 = (prefix2[r + 1] - (prefix2[l] * pow2[r - l + 1] % mod2) + mod2) % mod2
         return hash1 to hash2
     }
+
     val builder = StringBuilder()
     var j = 0
 
@@ -1518,33 +1554,33 @@ fun findReplaceString(s: String, indices: IntArray, sources: Array<String>, targ
         Triple(indices[it], sources[it], targets[it])
     }.sortedBy { it.first }
 
-    for(i in 0 until triples.size) {
+    for (i in 0 until triples.size) {
         val (index, source, target) = triples[i]
 
         val length = source.length
-        if(index + length > n)  continue
+        if (index + length > n) continue
 
-        val subHash = getHash(index, index + length -1)
+        val subHash = getHash(index, index + length - 1)
 
-        while(j < index) builder.append(s[j++])
+        while (j < index) builder.append(s[j++])
 
         var sourceHash1 = 0L
         var sourceHash2 = 0L
-        for(c in source) {
+        for (c in source) {
             val code = c.code
             sourceHash1 = (sourceHash1 * base1 + code) % mod1
             sourceHash2 = (sourceHash2 * base2 + code) % mod2
         }
         val sourceHash = sourceHash1 to sourceHash2
 
-        if(sourceHash != subHash) {
+        if (sourceHash != subHash) {
             continue
         }
         builder.append(target)
         j += length
     }
 
-    while(j < s.length) builder.append(s[j++])
+    while (j < s.length) builder.append(s[j++])
     return builder.toString()
 }
 
@@ -1552,7 +1588,7 @@ fun longestValidSubstring(word: String, forbidden: List<String>): Int {
     val blocks = mutableSetOf<String>()
     val lens = mutableSetOf<Int>()
 
-    for(str in forbidden) {
+    for (str in forbidden) {
         blocks.add(str)
         lens.add(str.length)
     }
@@ -1562,24 +1598,64 @@ fun longestValidSubstring(word: String, forbidden: List<String>): Int {
     var l = 0
     var r = 0
     var maxLen = 0
-    while(r < n) {
+    while (r < n) {
         val length = r - l + 1
-        for(len in suffixLens) {
-            if(len > length) break
+        for (len in suffixLens) {
+            if (len > length) break
             val suffix = word.substring(r - len + 1, r + 1)
 
-            if(suffix !in blocks) continue
+            if (suffix !in blocks) continue
 
-            maxLen = maxOf(maxLen, r- l)
+            maxLen = maxOf(maxLen, r - l)
             l = r - len + 2
             //  println("$suffix $l $r")
             break
         }
-        maxLen = maxOf(maxLen, r- l + 1)
+        maxLen = maxOf(maxLen, r - l + 1)
         r++
 
     }
     return maxLen
+}
+
+
+fun validSubstringCount(word1: String, word2: String): Long {
+    val m = word2.length
+    val n = word1.length
+    if (m > n) return 0L
+
+    val target = IntArray(26)
+    var targetMask = 0
+    for (c in word2) {
+        val id = c - 'a'
+        target[id]++
+        targetMask = targetMask or (1 shl id)
+    }
+
+
+    var mask = 0
+    var l = 0
+    val freq = IntArray(26)
+    var ans = 0L
+    for (r in 0 until n) {
+        val c = word1[r] - 'a'
+        freq[c]++
+        if (freq[c] >= target[c]) {
+            mask = mask or (1 shl c)
+        }
+
+        while (mask and targetMask == targetMask) {
+            ans += (n - r).toLong()
+            val first = word1[l] - 'a'
+            freq[first]--
+            if (freq[first] < target[first]) {
+                mask = mask and (1 shl first).inv()
+            }
+            l++
+        }
+    }
+
+    return ans
 }
 
 fun main() {
