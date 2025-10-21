@@ -410,6 +410,21 @@ fun pairSum(head: ListNode?): Int {
     return ans
 }
 
+fun numOfPairs(nums: Array<String>, target: String): Int {
+    val n = nums.size
+    var cnt = 0
+    for (i in 0 until n) {
+        for (j in 0 until n) {
+            if (i == j) continue
+            val a = nums[i]
+            val b = nums[j]
+            if (a.length + b.length != target.length) continue
+            if (a + b == target) cnt++
+        }
+    }
+    return cnt
+}
+
 fun main() {
     println(
         createSortedArray(intArrayOf(1, 5, 6, 2))

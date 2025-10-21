@@ -72,3 +72,11 @@ fun buildTree(values: List<Int?>): TreeNode? {
 
     return root
 }
+
+fun insertIntoBST(root: TreeNode?, x: Int): TreeNode? {
+    if (root == null) return TreeNode(x)
+    val value = root.`val`
+    if (x > value) root.right = insertIntoBST(root.right, x)
+    else if (x < value) root.left = insertIntoBST(root.left, x)
+    return root
+}

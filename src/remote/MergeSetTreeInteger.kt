@@ -87,7 +87,7 @@ fun subarraysWithKDistinct(nums: IntArray, k: Int): Int {
         var l = 0
         var distinctCount = 0
         var cnt = 0
-        for(r in 0 until n) {
+        for (r in 0 until n) {
             val num = nums[r]
             if (freq[num] == 0) distinctCount++
             freq[num]++
@@ -114,7 +114,7 @@ fun countCompleteSubarrays(nums: IntArray): Int {
         var l = 0
         var distinctCount = 0
         var cnt = 0
-        for(r in 0 until nums.size) {
+        for (r in 0 until nums.size) {
             val num = nums[r]
             if (freq[num] == 0) distinctCount++
             freq[num]++
@@ -129,7 +129,37 @@ fun countCompleteSubarrays(nums: IntArray): Int {
         }
         return cnt
     }
-    return countDistinct(k) - countDistinct(k-1)
+    return countDistinct(k) - countDistinct(k - 1)
+}
+
+fun maxFrequency(nums: IntArray, k: Int, numOperations: Int): Int {
+    val n = nums.size
+    val maxNum = nums.max()
+    val freq = IntArray(maxNum + 1)
+    for (num in nums) freq[num]++
+
+    val prefix = IntArray(maxNum + 2)
+
+    for (i in 0..maxNum) {
+        prefix[i + 1] = prefix[i] + freq[i]
+    }
+
+    fun countBeforeAfter(num: Int): Int {
+        val lo = (num - k).coerceAtLeast(0)
+        val hi = (num + k).coerceAtMost(maxNum)
+        val freqLow = prefix[num] - prefix[lo]
+        val freqHigh = (prefix[hi + 1] - prefix[num + 1]).coerceAtLeast(0)
+        return freqLow + freqHigh
+    }
+
+    var maxFreq = 0
+
+    for (num in 0..maxNum) {
+        val beforeAfter = countBeforeAfter(num)
+        val f = freq[num] + beforeAfter.coerceAtMost(numOperations)
+        maxFreq = maxOf(maxFreq, f)
+    }
+    return maxFreq
 }
 
 fun main() {
