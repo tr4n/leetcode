@@ -254,3 +254,43 @@ fun longestBalanced(nums: IntArray): Int {
 
     return ans
 }
+
+fun nextBeautifulNumber(n: Int): Int {
+    var numDigits = 0
+
+    var x = n
+    while(x > 0) {
+        numDigits ++
+        x/=10
+    }
+
+    var count = IntArray(10)
+    var ans = Long.MAX_VALUE
+    fun backtrack(pos: Int, num: Long) {
+        if(ans != Long.MAX_VALUE) return
+
+        if(pos == numDigits) {
+            if(num <= n) return
+            for(d in 1..9) {
+                val cnt = count[d]
+                if(cnt > 0 && cnt != d) return
+            }
+            ans = minOf(ans, num)
+            return
+        }
+
+        for(d in 1..9) {
+            if(count[d] >= d) continue
+            val newNum = num * 10L + d
+            count[d]++
+            backtrack(pos + 1, newNum)
+            count[d]--
+        }
+    }
+    while(ans == Long.MAX_VALUE) {
+        count = IntArray(10)
+        backtrack(0, 0L)
+        numDigits ++
+    }
+    return ans.toInt()
+}

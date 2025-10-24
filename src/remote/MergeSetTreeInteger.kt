@@ -1,5 +1,9 @@
 package remote
 
+import java.util.TreeMap
+import kotlin.math.max
+import kotlin.math.min
+
 class MergeSetTree<T : Comparable<T>>(private val arr: List<T>) {
     private val n = arr.size
     private val tree = Array(4 * n) { setOf<T>() }
@@ -132,7 +136,7 @@ fun countCompleteSubarrays(nums: IntArray): Int {
     return countDistinct(k) - countDistinct(k - 1)
 }
 
-fun maxFrequency(nums: IntArray, k: Int, numOperations: Int): Int {
+fun maxFrequency2(nums: IntArray, k: Int, numOperations: Int): Int {
     val n = nums.size
     val maxNum = nums.max()
     val freq = IntArray(maxNum + 1)
@@ -159,6 +163,51 @@ fun maxFrequency(nums: IntArray, k: Int, numOperations: Int): Int {
         val f = freq[num] + beforeAfter.coerceAtMost(numOperations)
         maxFreq = maxOf(maxFreq, f)
     }
+    return maxFreq
+}
+
+fun maxFrequency(nums: IntArray, k: Int, numOperations: Int): Int {
+    val n = nums.size
+    if (n == 0) return 0
+
+    val freq = nums.toList().groupingBy { it.toLong() }.eachCount()
+    val list = freq.keys.sorted()
+
+    val prefix = TreeMap<Long, Int>()
+    var prev = 0
+    for (num in list) {
+        val newValue = prev + (freq[num] ?: 0)
+        prefix[num] = newValue
+        prev = newValue
+    }
+
+    fun countInRange(target: Long): Int {
+        val kLong = k.toLong()
+        val lo = prefix.lowerEntry(target - kLong)?.value ?: 0
+        val hi = prefix.floorEntry(target + kLong)?.value ?: 0
+        return hi - lo
+    }
+
+    var maxFreq = 0
+    val kLong = k.toLong()
+    val candidates = mutableSetOf<Long>()
+    for (key in list) {
+        candidates.add(key)
+        candidates.add(key - kLong)
+        candidates.add(key + kLong)
+    }
+
+    for (num in candidates) {
+        val totalInRange = countInRange(num)
+        val currentFreq = freq[num] ?: 0
+
+        val othersInRange = totalInRange - currentFreq
+        val opsUsed = min(othersInRange, numOperations)
+
+        val f = currentFreq + opsUsed
+        maxFreq = max(maxFreq, f)
+    }
+
     return maxFreq
 }
 
