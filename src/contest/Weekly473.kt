@@ -4,15 +4,15 @@ class Weekly473 {
 
     fun maxAlternatingSum(nums: IntArray): Long {
         val n = nums.size
-        val k = n/2
+        val k = n / 2
         val numbers = mutableListOf<Long>()
-        for(num in nums) {
+        for (num in nums) {
             numbers.add(num.toLong() * num.toLong())
         }
         numbers.sort()
         var ans = 0L
-        for(i in 0 until n) {
-            if(i < k) ans -= numbers[i] else ans += numbers[i]
+        for (i in 0 until n) {
+            if (i < k) ans -= numbers[i] else ans += numbers[i]
         }
         return ans
     }

@@ -1140,11 +1140,11 @@ class CharDoubleHasher(
     }
 
     // hash reverse s[l..r]
-    fun getHashRev(l: Int, r: Int): Pair<Long, Long> {
-        val rl = n - 1 - r
-        val rr = n - 1 - l
-        val h1 = (prefixRev1[rr + 1] - (prefixRev1[rl] * pow1[rr - rl + 1]) % mod1 + mod1) % mod1
-        val h2 = (prefixRev2[rr + 1] - (prefixRev2[rl] * pow2[rr - rl + 1]) % mod2 + mod2) % mod2
+    fun getHashRev(ll: Int, rr: Int): Pair<Long, Long> {
+        val l = n - 1 - rr
+        val r = n - 1 - ll
+        val h1 = (prefixRev1[r + 1] - (prefixRev1[l] * pow1[r - l + 1]) % mod1 + mod1) % mod1
+        val h2 = (prefixRev2[r + 1] - (prefixRev2[l] * pow2[r - l + 1]) % mod2 + mod2) % mod2
         return Pair(h1, h2)
     }
 }
@@ -1656,6 +1656,39 @@ fun validSubstringCount(word1: String, word2: String): Long {
     }
 
     return ans
+}
+
+fun subStrHash(s: String, power: Int, module: Int, k: Int, hashValue: Int): String {
+    val n = s.length
+    val target = hashValue.toLong()
+
+    // reverse str
+    val value = LongArray(n) { s[n - it - 1] - 'a' + 1L }
+
+    // pre-compute pow^(k -1)
+    var pow = 1L
+    for (i in 1 until k) pow = pow * power % module
+
+    var pos = 0
+    var hash = 0L
+    for (i in 0 until k){
+        hash = (hash * power + value[i]) % module
+    }
+
+    if (hash == target) {
+        pos = k - 1
+    }
+
+    for (i in k until n) {
+        val first = value[i - k]
+        val last = value[i]
+        hash = (hash - first * pow % module + module) % module
+        hash = (hash * power + last) % module
+        if (hash == target) pos = i
+
+    }
+    val start = n - 1 - pos
+    return s.substring(start, start + k)
 }
 
 fun main() {
