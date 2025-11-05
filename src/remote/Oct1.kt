@@ -1,5 +1,8 @@
 package remote
 
+import java.util.TreeMap
+import java.util.TreeSet
+
 fun countCoveredBuildings(n: Int, buildings: Array<IntArray>): Int {
     val rows = mutableMapOf<Int, Pair<Int, Int>>()
     val cols = mutableMapOf<Int, Pair<Int, Int>>()
@@ -259,38 +262,120 @@ fun nextBeautifulNumber(n: Int): Int {
     var numDigits = 0
 
     var x = n
-    while(x > 0) {
-        numDigits ++
-        x/=10
+    while (x > 0) {
+        numDigits++
+        x /= 10
     }
 
     var count = IntArray(10)
     var ans = Long.MAX_VALUE
     fun backtrack(pos: Int, num: Long) {
-        if(ans != Long.MAX_VALUE) return
+        if (ans != Long.MAX_VALUE) return
 
-        if(pos == numDigits) {
-            if(num <= n) return
-            for(d in 1..9) {
+        if (pos == numDigits) {
+            if (num <= n) return
+            for (d in 1..9) {
                 val cnt = count[d]
-                if(cnt > 0 && cnt != d) return
+                if (cnt > 0 && cnt != d) return
             }
             ans = minOf(ans, num)
             return
         }
 
-        for(d in 1..9) {
-            if(count[d] >= d) continue
+        for (d in 1..9) {
+            if (count[d] >= d) continue
             val newNum = num * 10L + d
             count[d]++
             backtrack(pos + 1, newNum)
             count[d]--
         }
     }
-    while(ans == Long.MAX_VALUE) {
+    while (ans == Long.MAX_VALUE) {
         count = IntArray(10)
         backtrack(0, 0L)
-        numDigits ++
+        numDigits++
     }
     return ans.toInt()
+}
+
+fun findXSum(nums: IntArray, k: Int, x: Int): LongArray {
+    val comparator = compareByDescending<Pair<Long, Int>> { it.second }.thenByDescending { it.first }
+    val n = nums.size
+    val freq = mutableMapOf<Long, Int>()
+    val tops = TreeSet<Pair<Long, Int>>(comparator)
+    val others = TreeSet<Pair<Long, Int>>(comparator)
+    var sum = 0L
+
+    fun balance() {
+        while (tops.size > x) {
+            val lowest = tops.pollLast() ?: break
+            others.add(lowest)
+            sum -= lowest.first * lowest.second
+        }
+
+        while (tops.size < x && others.isNotEmpty()) {
+            val highest = others.pollFirst() ?: break
+            tops.add(highest)
+            sum += highest.first * highest.second
+        }
+
+        while (tops.isNotEmpty() && others.isNotEmpty()) {
+         //  println("${tops.last} ${others.first} ${comparator.compare(tops.last(), others.first())}")
+          //  println(comparator.compare(tops.last(), others.first()))
+            if (comparator.compare(tops.last(), others.first()) <= 0) break
+            val lowest = tops.pollLast() ?: break
+            val highest = others.pollFirst() ?: break
+            tops.add(highest)
+            others.add(lowest)
+            sum -= lowest.first * lowest.second
+            sum += highest.first * highest.second
+        }
+//        println(freq.toList())
+//        println(tops.toList())
+//        println(others.toList())
+//        println("--> $sum")
+    }
+
+    fun update(num: Long, extra: Int) {
+        val curFreq = freq[num] ?: 0
+        val newFreq = curFreq + extra
+        freq[num] = newFreq
+
+        val curPair = num to curFreq
+        val newPair = num to newFreq
+
+        if (curPair in others) {
+            others.remove(curPair)
+            if (newFreq > 0) others.add(newPair)
+        } else {
+            tops.remove(curPair)
+            if (newFreq > 0) tops.add(newPair)
+            sum += num * extra
+        }
+        balance()
+    }
+
+    for (i in 0 until k) {
+        val num = nums[i].toLong()
+        update(num, 1)
+    }
+
+    val result = LongArray(n - k + 1)
+    result[0] = sum
+
+    for (i in k until n) {
+        update(nums[i].toLong(), 1)
+        update(nums[i - k].toLong(), -1)
+        result[i - k + 1] = sum
+    }
+    return result
+}
+
+fun main() {
+    println(
+        findXSum(
+            intArrayOf(1, 1, 2, 2, 3, 4, 2, 3),
+            6, 2
+        ).toList()
+    )
 }
