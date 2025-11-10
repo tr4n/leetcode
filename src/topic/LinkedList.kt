@@ -425,6 +425,62 @@ fun numOfPairs(nums: Array<String>, target: String): Int {
     return cnt
 }
 
+fun detectCycle(head: ListNode?): ListNode? {
+    var slow = head
+    var fast = head
+    while(slow != null && fast != null) {
+        slow = slow.next
+        fast = fast.next?.next
+        if(slow == fast) break
+    }
+
+    if(slow == null || fast == null) return null
+    var length = 1
+    slow = slow.next
+    while(slow != fast) {
+        slow = slow?.next
+        length ++
+    }
+
+    slow = head
+    fast = head
+    while(length-- > 0) fast = fast?.next
+
+    while(slow != fast) {
+        slow = slow?.next
+        fast = fast?.next
+    }
+    return slow
+
+}
+
+fun findDuplicate1(nums: IntArray): Int {
+    val n =  nums.size
+    var slow = nums[0]
+    var fast = nums[nums[0]]
+
+    while(slow != fast) {
+        slow = nums[slow]
+        fast = nums[nums[fast]]
+    }
+    var length = 1
+    slow = nums[slow]
+    while(slow != fast) {
+        length ++
+        slow = nums[slow]
+    }
+
+    slow = nums[0]
+    fast = nums[0]
+    while(length -- > 0) fast = nums[fast]
+
+    while(slow != fast) {
+        slow = nums[slow]
+        fast = nums[fast]
+    }
+    return slow
+}
+
 fun main() {
     println(
         createSortedArray(intArrayOf(1, 5, 6, 2))
